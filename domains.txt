@@ -1,0 +1,4 @@
+A;home.domain.com
+A;cloud.domain.com
+A;git.domain.com
+A;domain.com

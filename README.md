@@ -1,7 +1,7 @@
 # Flask My Ip + Bot Telegram
 # Installation
 
-Using Docker Compose is basically a three-step process:
+Using ***Flaskmyip*** is basically a five-step process:
 1. Install dependencies using `pip3`
 ```
 pip3 install -r requirements.txt

@@ -1,5 +1,27 @@
-# Flask My Ip
+# Flask My Ip + Bot Telegram
+# Installation
 
+Using Docker Compose is basically a three-step process:
+1. Install dependencies using `pip3`
+```
+pip3 install -r requirements.txt
+```
+2. Create a file call `domains.txt` and add the record type and dominion separated by ";".
+3. Rename `.env_exemple` to only `.env` then put the necessary credentials to start the program execution.
+4. Using the ```--log``` as argument, you can write the application log to the path configured in your `.env`, but by default it is `/var/log/ip_update/update.log`
+
+```
+python3 run.py --log
+```
+5. You can create a cron job, in this case on your linux server (for 5m in 5m run check IP)
+
+***/etc/crontab***
+```bash
+*/5 *  * * * root cd /folder_path/flaskmyip/; python3 run.py --log
+```
+<br/>
+
+# For development
 ## Install using PIP ENV
 ```
 pipenv install
@@ -21,15 +43,6 @@ pip install -r requirements.txt
 ```
 
 
-### Create Crontab
-```bash
-sudo mkdir /var/log/ip_update/
-sudo chown tm:tm /var/log/ip_update/
-touch /var/log/ip_update/update.log
-python3 update_cf.py >> /var/log/ip_update/update.log 2>&1
-```
-<hr/>
-
 ## DOC CloudFlare to explain PUT and GET of API
 ***GET***
 <a href="https://api.cloudflare.com/#dns-records-for-a-zone-dns-record-details">
@@ -45,7 +58,7 @@ Update DNS Record
 <br/>
 <br/>
 
-# The creation of the container is in development :raised_back_of_hand:
+## The creation of the container is in development :raised_back_of_hand:
 ```
 app.py
 Dockerfile

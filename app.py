@@ -28,11 +28,11 @@ def home_ip():
         return n_ip
 
     if new_ip and passwd == config('PASSWD', default=False):
-        with open('home_ip.txt', 'r+') as file:
+        with open('home_ip.txt', 'w') as file:
             file.write(new_ip)
             file.close()
 
-        return 'Tudo OK!'
+        return 'Tudo OK! {}'.format(new_ip)
 
     else:
         return 'Oh my God!'

@@ -6,7 +6,13 @@ class TMTelegram:
         self.url = 'https://api.telegram.org/'
 
     def send_msg(self, **kwargs):
-        if len(kwargs) > 3:
+        if kwargs.get('OTHER'):
+            MSG=f"""
+ICHOST: {kwargs.get('IC_HOST')}
+STATUS: Salt restarted
+"""
+
+        elif len(kwargs) > 3:
             domain_update = []
             if len(kwargs.get('Domains Success')) >= 1:
                 for d in kwargs.get('Domains Success'):
@@ -16,13 +22,12 @@ class TMTelegram:
                         domain_update.append(do_su)
 
             MSG=f"""
-----------------------
-DATA: 14/09/2022 10:42
 OLD IP: {kwargs.get('Old IP')}
 NEW IP: {kwargs.get('New IP')}
 DOMAIN: {domain_update}
-----------------------
 """
+
+        # continue script
         if kwargs.get('MSG'):
             MSG = kwargs.get('MSG')
 

@@ -1,10 +1,14 @@
 from lib.cloudflare import TMCloudflare
 from lib.telegram import TMTelegram
 from lib.getpubip import Getpubip
+from lib.home_ip import HomeIP
 from datetime import datetime
 from decouple import config
 from os.path import exists
+import subprocess
+import requests
 import pathlib
+import socket
 import time
 import json
 import sys
@@ -12,7 +16,7 @@ import os
 
 
 class Flaskmyip:
-    def __init__(self):
+    def __init__(self, args=None):
         # Cloud Flare
         self.STATUS = config('STATUS', default=False)
         self.ZONE_ID = config('ZONE_ID', default=False)
@@ -25,7 +29,10 @@ class Flaskmyip:
         # Dir log
         self.DIR_LOG = config('DIR_LOG', default='/var/log/ip_update/')
         # Dir log and File log
-        self.rec_log = sys.argv[1] if len(sys.argv) > 1 and str(sys.argv[1]) == '--log' else False
+        if args == None:
+            self.rec_log = False
+        elif args:
+            self.rec_log = True
         self.local_dir = str(pathlib.Path(__file__).parent.resolve())
         self.filetxt = self.local_dir + '/ip.txt'
         self.filerec = self.local_dir + '/domains.txt'
@@ -150,7 +157,16 @@ class Flaskmyip:
 
         if pub_ipv4 != file_ipv4:
             file_domains = self.read_domain()
+            params = (
+                    ('n_ip', pub_ipv4),
+                    ('pass', config('PASSWD')),
+                )
+            res = requests.get(config('HOME_URL_CHECK'), params=params)
+            # TODO - melhorar a verificacao
+            if res.status_code == 200:
+                pass
 
+            # records
             records = []
             result = self.get_result()
             for domain in result['result']:
@@ -196,7 +212,7 @@ class Flaskmyip:
                 res = self.send_check(**data_res)
                 data_res.update(res)
 
-            if self.rec_log == '--log':
+            if self.rec_log:
                 with open(self.filelog,'a') as file:
                     file.write(str(data_res.get('MSG')))
                     file.close()
@@ -205,13 +221,60 @@ class Flaskmyip:
 
         # No changes IPV4 - All Ok
         sys.exit(0)
+    
+    def restart_salt(self):
+        salt_home_ip = HomeIP().get_home_ip()
+        salt_url_ip = socket.gethostbyname(config('HOME_SALT_URL'))
 
+        commd = 'sudo systemctl restart salt-minion'
+        res = {}
+        if salt_home_ip != salt_url_ip:
+            proc = subprocess.Popen(commd, stdout=subprocess.PIPE, shell=True, \
+            stderr=subprocess.PIPE, universal_newlines=True)
+            out, err = proc.communicate()
+
+        res = {
+            'stdout': out.strip(),
+            'stderr': err.strip(),
+        }
+
+        if res.get('stderr') == '':
+            res_data = {
+                'CHAT_ID': self.CHAT_ID,
+                'BOT_ID': self.BOT_ID,
+                'IC_HOST': socket.gethostname(),
+                'OTHER': True
+            }
+            self.send_check(**res_data)
+            return True
+
+        else:
+            return False
 
 def run_and_install():
+    act_log = False
+    re_salt = False
+    if len(sys.argv) == 1:
+        print('put arg --log or --restart_salt')
+        sys.exit(1)
+
+    for arg in sys.argv:
+        if arg == '--log':
+            act_log = True
+        if arg == '--restart_salt':
+            re_salt = True
+
+    if re_salt:
+        Flaskmyip().restart_salt()
+    elif act_log:
+        Flaskmyip(args=True).check_ipv4()
+
+    # Exemples test
     # Flaskmyip().get_result()
     # Flaskmyip().ipv4_file()
     # Flaskmyip().read_domain()
     # Flaskmyip().check_install()
-    Flaskmyip().check_ipv4()
+    # Flaskmyip().check_ipv4()
+    # Flaskmyip(args=True).restart_salt()
 
 run_and_install()

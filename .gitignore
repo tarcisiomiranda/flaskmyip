@@ -1,2 +1,4 @@
 ip.txt
 domains.txt
+lib/__pycache__
+.env

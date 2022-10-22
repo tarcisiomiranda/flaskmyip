@@ -71,5 +71,5 @@ curl -X GET http://test.api
 
 ## Build your docker image
 ```docker
-docker build -t chephei/flaskmyip:1.1 .
+docker build -t chephei/flaskmyip:1.4 .
 ```

@@ -233,10 +233,10 @@ class Flaskmyip:
             stderr=subprocess.PIPE, universal_newlines=True)
             out, err = proc.communicate()
 
-        res = {
-            'stdout': out.strip(),
-            'stderr': err.strip(),
-        }
+            res = {
+                'stdout': out.strip(),
+                'stderr': err.strip(),
+            }
 
         if res.get('stderr') == '':
             res_data = {

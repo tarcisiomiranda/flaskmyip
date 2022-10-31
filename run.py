@@ -1,6 +1,7 @@
 from lib.cloudflare import TMCloudflare
 from lib.telegram import TMTelegram
 from lib.getpubip import Getpubip
+from lib.ssh_cmd import SshNodes
 from lib.home_ip import HomeIP
 from datetime import datetime
 from decouple import config
@@ -34,9 +35,11 @@ class Flaskmyip:
         elif args:
             self.rec_log = True
         self.local_dir = str(pathlib.Path(__file__).parent.resolve())
+        self.filelog = self.DIR_LOG + 'update.log'
         self.filetxt = self.local_dir + '/ip.txt'
         self.filerec = self.local_dir + '/domains.txt'
-        self.filelog = self.DIR_LOG + 'update.log'
+        self.filedte = self.local_dir + '/date_renew_ip.txt'
+        self.fserver = self.local_dir + '/servers.txt'
         # print('SYS ARG :', self.rec_log)
 
     def get_result(self):
@@ -134,7 +137,19 @@ class Flaskmyip:
                 file.write('Arquivo de log criado com sucesso!')
                 file.close()
 
-        if dir_log and fil_log:
+        fil_dte = exists(self.filedte)
+        if fil_dte == False:
+            with open(self.filedte,'w') as file:
+                file.write('Arquivo de data criado com sucesso!')
+                file.close()
+
+        fil_srv = exists(self.fserver)
+        if fil_srv == False:
+            with open(self.fserver,'w') as file:
+                file.write('Arquivo de servidores criado com sucesso!')
+                file.close()
+
+        if dir_log and fil_log and fil_dte and fil_srv:
             res_check_install = True
         else:
             res_check_install = False
@@ -242,7 +257,7 @@ class Flaskmyip:
             res_data = {
                 'CHAT_ID': self.CHAT_ID,
                 'BOT_ID': self.BOT_ID,
-                'IC_HOST': socket.gethostname(),
+                'IC_RESTART': socket.gethostname(),
                 'OTHER': True
             }
             self.send_check(**res_data)
@@ -250,6 +265,47 @@ class Flaskmyip:
 
         else:
             return False
+
+    def restart_via_ssh_salt(self):
+
+        pub_ipv4 = self.public_ipv4()
+        # reiniciar servidores que possuem salt
+        with open(self.fserver, 'r') as file:
+            srv = file.read()
+            file.close()
+
+        servers_ok = []
+        servers_er = []
+        for s in srv.split('\n'):
+            server = s.split(';')
+            if len(server) > 1:
+                print('SERVER >', server)
+                if server[0] == 'LNX':
+                    res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
+
+                    if pub_ipv4 != res_ssh[0]:
+                        res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], \
+                            cmmd='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"')
+                        print('IP4_DIFF', res_salt)
+                        if res_salt == 'restart':
+                            servers_ok.append(server[1])
+                        elif res_salt == 're-error':
+                            servers_er.append(server[1])
+
+        if servers_ok != []:
+            res_data = {
+            'CHAT_ID': self.CHAT_ID,
+            'BOT_ID': self.BOT_ID,
+            'IC_RESTART': servers_ok,
+            'IC_ERROR': servers_er,
+            'OTHER': True
+            }
+            self.send_check(**res_data)
+            return True
+
+        else:
+            return False
+
 
 def run_and_install():
     act_log = False
@@ -268,6 +324,7 @@ def run_and_install():
         Flaskmyip().restart_salt()
     elif act_log:
         Flaskmyip(args=True).check_ipv4()
+        Flaskmyip().restart_via_ssh_salt()
 
     # Exemples test
     # Flaskmyip().get_result()

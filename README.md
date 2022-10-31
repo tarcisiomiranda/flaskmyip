@@ -73,3 +73,13 @@ curl -X GET http://test.api
 ```docker
 docker build -t chephei/flaskmyip:1.4 .
 ```
+
+
+
+
+# https://stackoverflow.com/questions/991758/how-to-get-pem-file-from-key-and-crt-files
+openssl rsa -in server.key -text > private.pem
+# https://docs.paramiko.org/en/stable/api/client.html
+
+# tmux 
+setw synchronize-panes

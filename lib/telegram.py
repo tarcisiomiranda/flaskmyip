@@ -8,8 +8,9 @@ class TMTelegram:
     def send_msg(self, **kwargs):
         if kwargs.get('OTHER'):
             MSG=f"""
-ICHOST: {kwargs.get('IC_HOST')}
-STATUS: Salt restarted
+STATUS: <b>Salt hosts Minion</b>
+IC__HOST: {kwargs.get('IC_RESTART')}
+IC_ERROR: {kwargs.get('IC_ERROR')}
 """
 
         elif len(kwargs) > 3:
@@ -43,6 +44,7 @@ DOMAIN: {domain_update}
                 params = (
                     ('chat_id', kwargs.get('CHAT_ID')),
                     ('text', MSG),
+                    ('parse_mode', 'HTML')
                 )
 
                 new_url = '{}{}/sendmessage'.format(self.url, kwargs.get('BOT_ID'))

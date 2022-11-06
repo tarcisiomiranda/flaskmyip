@@ -1,5 +1,5 @@
 #!flask/bin/python
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from decouple import config
 import os
 
@@ -8,10 +8,17 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def get_tasks():
+    # print('---->', request.url_root)
+    # print('---->', request.headers['Host'])
+    if str(request.headers['Host']) == 'discord.pinkserver.net':
+        return redirect('https://discord.gg/SRK5eSrR', code=302)
+
     if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
         return jsonify({'ip': request.environ['REMOTE_ADDR']}), 200
     else:
         return jsonify({'ip': request.environ['HTTP_X_FORWARDED_FOR']}), 200
+    
+    # return redirect("http://www.example.com", code=302)
 
 @app.route('/home', methods=['GET'])
 def home_ip():

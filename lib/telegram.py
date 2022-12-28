@@ -7,10 +7,10 @@ class TMTelegram:
 
     def send_msg(self, **kwargs):
         if kwargs.get('OTHER'):
-            MSG=f"""
-STATUS: <b>Salt hosts Minion</b>
-IC__HOST: {kwargs.get('IC_RESTART')}
-IC_ERROR: {kwargs.get('IC_ERROR')}
+            MSG=f"""\
+<b>_STATUS:</b> <b>Salt hosts Minion</b>
+<b>IC_HOST:</b> {kwargs.get('IC_RESTART')}
+<b>_IC_ERR:</b> {kwargs.get('IC_ERROR')}
 """
 
         elif len(kwargs) > 3:
@@ -22,10 +22,11 @@ IC_ERROR: {kwargs.get('IC_ERROR')}
                         do_su = do_su.get('name')
                         domain_update.append(do_su)
 
-            MSG=f"""
-OLD IP: {kwargs.get('Old IP')}
-NEW IP: {kwargs.get('New IP')}
-DOMAIN: {domain_update}
+            MSG=f"""\
+<b>OLD_IP:</b> {kwargs.get('OLD_IP')}
+<b>NEW_IP:</b> {kwargs.get('NEW_IP')}
+<b>FWL_DO:</b> {kwargs.get('FWL_DO')}
+<b>DOMAIN:</b> {domain_update} 
 """
 
         # continue script
@@ -63,3 +64,7 @@ DOMAIN: {domain_update}
                 'message': 'Error when send message - {}'.format(err),
                 'MSG': MSG
             }
+
+
+if __name__ == '__main__':
+    pass

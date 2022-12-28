@@ -3,6 +3,7 @@ from lib.telegram import TMTelegram
 from lib.getpubip import Getpubip
 from lib.ssh_cmd import SshNodes
 from lib.home_ip import HomeIP
+from lib.api_do import API_DO
 from datetime import datetime
 from decouple import config
 from os.path import exists
@@ -40,6 +41,7 @@ class Flaskmyip:
         self.filerec = self.local_dir + '/domains.txt'
         self.filedte = self.local_dir + '/date_renew_ip.txt'
         self.fserver = self.local_dir + '/servers.txt'
+        self.fwl_do = config('FWL_DO', default=False)
         # print('SYS ARG :', self.rec_log)
 
     def get_result(self):
@@ -87,7 +89,7 @@ class Flaskmyip:
                 file.close()
 
             return myip
-    
+
     def read_domain(self):
         try:
             with open(self.filerec, 'r+', encoding = 'utf-8') as file:
@@ -156,6 +158,16 @@ class Flaskmyip:
 
         return res_check_install
 
+    def update_rules(self, aws=False, do=False, oci=False):
+        pub_ipv4 = self.public_ipv4()
+        retorno = API_DO().update_fw(ipv4=pub_ipv4, fwl=self.fwl_do)
+
+        if bool(retorno):
+            return retorno
+
+        else:
+            return False
+
     def check_ipv4(self):
         # Check dir and log file
         ci = self.check_install()
@@ -213,13 +225,16 @@ class Flaskmyip:
                 else:
                     res_compose_ok.append(res)
 
+            # update fwl_do
+            update_fwl_do = self.update_rules()
             data_res = {
                 'BOT_ID': self.BOT_ID,
                 'CHAT_ID': self.CHAT_ID,
                 'Domains Success': res_compose_ok,
                 'Domains Error': res_compose_er,
-                'New IP': pub_ipv4,
-                'Old IP': file_ipv4
+                'NEW_IP': pub_ipv4,
+                'OLD_IP': file_ipv4,
+                'FWL_DO': update_fwl_do
             }
 
             if len(res_compose_ok) > 1:
@@ -236,7 +251,7 @@ class Flaskmyip:
 
         # No changes IPV4 - All Ok
         sys.exit(0)
-    
+
     def restart_salt(self):
         salt_home_ip = HomeIP().get_home_ip()
         salt_url_ip = socket.gethostbyname(config('HOME_SALT_URL'))
@@ -278,19 +293,24 @@ class Flaskmyip:
         servers_er = []
         for s in srv.split('\n'):
             server = s.split(';')
-            if len(server) > 1:
-                print('SERVER >', server)
-                if server[0] == 'LNX':
-                    res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
+            try:
+                if len(server) > 1:
+                    print('SERVER >', server)
+                    if server[0] == 'LNX':
+                        res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
 
-                    if pub_ipv4 != res_ssh[0]:
-                        res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], \
-                            cmmd='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"')
-                        print('IP4_DIFF', res_salt)
-                        if res_salt == 'restart':
-                            servers_ok.append(server[1])
-                        elif res_salt == 're-error':
-                            servers_er.append(server[1])
+                        if pub_ipv4 != res_ssh[0]:
+                            res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], \
+                                cmmd='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"')
+                            print('IP4_DIFF', res_salt)
+                            if res_salt == 'restart':
+                                servers_ok.append(server[1])
+                            elif res_salt == 're-error':
+                                servers_er.append(server[1])
+
+            except Exception as err:
+                servers_er.append(server[1])
+                print(str(err))
 
         if servers_ok != []:
             res_data = {
@@ -305,6 +325,7 @@ class Flaskmyip:
 
         else:
             return False
+
 
 
 def run_and_install():
@@ -335,3 +356,4 @@ def run_and_install():
     # Flaskmyip(args=True).restart_salt()
 
 run_and_install()
+# Flaskmyip().update_rules()

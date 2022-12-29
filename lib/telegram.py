@@ -23,9 +23,9 @@ class TMTelegram:
                         domain_update.append(do_su)
 
             MSG=f"""\
-<b>OLD_IP:</b> {kwargs.get('OLD_IP')}
-<b>NEW_IP:</b> {kwargs.get('NEW_IP')}
-<b>FWL_DO:</b> {kwargs.get('FWL_DO')}
+<b>OLD_IP:</b> {kwargs.get('OLD_IP').strip()}
+<b>NEW_IP:</b> {kwargs.get('NEW_IP').strip()}
+<b>FWL_DO:</b> {kwargs.get('FWL_DO').strip()}
 <b>DOMAIN:</b> {domain_update} 
 """
 

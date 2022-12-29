@@ -9,7 +9,8 @@ class API_DO:
     def __init__(self):
         basedir = os.path.abspath(os.path.dirname(__file__))
         with open('{}/../keys_gpg/do_key.txt'.format(basedir), 'r') as f:
-            DIGITALOCEAN_TOKEN = f.read()
+            DIGITALOCEAN_TOKEN = f.read().strip()
+            print('DIGITALOCEAN_TOKEN ', DIGITALOCEAN_TOKEN)
             f.close()
         self.headers = {
             'Content-Type': 'application/json',
@@ -31,7 +32,8 @@ class API_DO:
         response = requests.get('https://api.digitalocean.com/v2/firewalls', headers=self.headers)
         res = response.text
         json_decode = json.loads(res)
-        json_encode = json.dumps(res, sort_keys=True, indent=4)
+
+        #json_encode = json.dumps(res, sort_keys=True, indent=4)
 
         return json_decode
 
@@ -71,7 +73,6 @@ class API_DO:
 
                         # Melhorar isso aqui meu Deus
                         inbound_rules = rule_update[0].get('inbound_rules').copy()
-                        print('inbound_rules', inbound_rules)
                         for ports in inbound_rules:
                             if ports.get('ports') == '22':
                                 if self.verify_none(data=ports.get('sources').get('addresses')):

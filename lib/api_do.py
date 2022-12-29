@@ -17,6 +17,7 @@ class API_DO:
         }
 
     def verify_none(self, data=False):
+        # print('DATA ', type(data), data, bool(data))
         if bool(data):
             if data == None:
                 return True
@@ -67,20 +68,23 @@ class API_DO:
                         # indentificando a regra
                         # print('NOME: ', rule_update[0].get('name'))
                         # print('__ID: ', rule_update[0].get('id'))
+
+                        # Melhorar isso aqui meu Deus
                         inbound_rules = rule_update[0].get('inbound_rules').copy()
+                        print('inbound_rules', inbound_rules)
                         for ports in inbound_rules:
                             if ports.get('ports') == '22':
-                                if self.verify_none(ports.get('sources').get('addresses')):
-                                    ports.get('sources').update({'addresses': [ipv4]})
+                                if self.verify_none(data=ports.get('sources').get('addresses')):
+                                    ports.get('sources')['addresses'].append(ipv4)
                                 else:
-                                    ports.get('sources').get('addresses').append(ipv4)
+                                    ports.get('sources').update({'addresses': [ipv4]})
 
                             if ports.get('ports') == '9109':
-                                if self.verify_none(ports.get('sources').get('addresses')):
-                                    ports.get('sources').update({'addresses': [ipv4]})
+                                if self.verify_none(data=ports.get('sources').get('addresses')):
+                                    ports.get('sources')['addresses'].append(ipv4)
                                 else:
-                                    ports.get('sources').get('addresses').append(ipv4)
-
+                                    ports.get('sources').update({'addresses': [ipv4]})
+    
                         # limpando e adicionando os novos address
                         rule_update[0]['inbound_rules'].clear()
                         [rule_update[0]['inbound_rules'].append(x) for x in inbound_rules]

@@ -8,9 +8,9 @@ class TMTelegram:
     def send_msg(self, **kwargs):
         if kwargs.get('OTHER'):
             MSG=f"""\
-<b>_STATUS:</b> <b>Salt hosts Minion</b>
-<b>IC_HOST:</b> {kwargs.get('IC_RESTART')}
-<b>_IC_ERR:</b> {kwargs.get('IC_ERROR')}
+<b>____STATUS:</b> <b>Salt hosts Minion</b>
+<b>IC_RESTART:</b> {kwargs.get('IC_RESTART')}
+<b>IC___ERROR:</b> {kwargs.get('IC_ERROR')}
 """
 
         elif len(kwargs) > 3:
@@ -26,6 +26,9 @@ class TMTelegram:
 <b>OLD_IP:</b> {kwargs.get('OLD_IP').strip()}
 <b>NEW_IP:</b> {kwargs.get('NEW_IP').strip()}
 <b>FWL_DO:</b> {kwargs.get('FWL_DO').strip()}
+<b>FWL_AWS:</b> {kwargs.get('FWL_DO').strip()}
+<b>FWL_LIN:</b> {kwargs.get('FWL_LIN').strip()}
+<b>FWL_OCI:</b> {kwargs.get('FWL_OCI').strip()}
 <b>DOMAIN:</b> {domain_update} 
 """
 

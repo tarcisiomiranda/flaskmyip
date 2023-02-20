@@ -10,7 +10,6 @@ class API_DO:
         basedir = os.path.abspath(os.path.dirname(__file__))
         with open('{}/../keys_gpg/do_key.txt'.format(basedir), 'r') as f:
             DIGITALOCEAN_TOKEN = f.read().strip()
-            print('DIGITALOCEAN_TOKEN ', DIGITALOCEAN_TOKEN)
             f.close()
         self.headers = {
             'Content-Type': 'application/json',

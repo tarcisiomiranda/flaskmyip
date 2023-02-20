@@ -3,6 +3,10 @@ from lib.telegram import TMTelegram
 from lib.getpubip import Getpubip
 from lib.ssh_cmd import SshNodes
 from lib.home_ip import HomeIP
+# Clouds
+from lib.api_linode import API_LINODE
+from lib.api_aws import API_AWS
+from lib.api_oci import API_OCI
 from lib.api_do import API_DO
 from datetime import datetime
 from decouple import config
@@ -41,7 +45,9 @@ class Flaskmyip:
         self.filerec = self.local_dir + '/domains.txt'
         self.filedte = self.local_dir + '/date_renew_ip.txt'
         self.fserver = self.local_dir + '/servers.txt'
+        # Firewall API
         self.fwl_do = config('FWL_DO', default=False)
+        self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
         # print('SYS ARG :', self.rec_log)
 
     def get_result(self):
@@ -158,11 +164,24 @@ class Flaskmyip:
 
         return res_check_install
 
-    def update_rules(self, aws=False, do=False, oci=False):
+    def update_rules(self, _do=False, _aws=False, _oci=False, _lin=False):
         pub_ipv4 = self.public_ipv4()
-        retorno = API_DO().update_fw(ipv4=pub_ipv4, fwl=self.fwl_do)
+        try:
+            if _do:
+                retorno = API_DO().update_fw(ipv4=pub_ipv4, fwl=self.fwl_do)
+            elif _aws:
+                retorno = API_AWS(ipv4=pub_ipv4, gid=self.fwl_aws).update_rules()
+            elif _oci:
+                retorno = API_OCI().update_rules(ipv4=pub_ipv4)
+            elif _lin:
+                retorno = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
 
-        if bool(retorno):
+        except Exception as err:
+            print('Erro no update rule {}: {}'.format(nuvem, err))
+            retorno = False
+            pass
+
+        if retorno:
             return retorno
 
         else:
@@ -226,7 +245,12 @@ class Flaskmyip:
                     res_compose_ok.append(res)
 
             # update fwl_do
-            update_fwl_do = self.update_rules()
+            print('| -- UPDATES FIREWALL -- |')
+            update_fwl_do = self.update_rules(_do=True)
+            update_fwl_aws = self.update_rules(_aws=False)
+            update_fwl_lin = self.update_rules(_lin=True)
+            update_fwl_oci = self.update_rules(_oci=True)
+            print('|--- PASSOU NOS UPDATES DOS FIREWALL ---|')
             data_res = {
                 'BOT_ID': self.BOT_ID,
                 'CHAT_ID': self.CHAT_ID,
@@ -234,7 +258,10 @@ class Flaskmyip:
                 'Domains Error': res_compose_er,
                 'NEW_IP': pub_ipv4,
                 'OLD_IP': file_ipv4,
-                'FWL_DO': update_fwl_do
+                'FWL_DO': update_fwl_do,
+                'FWL_AWS': update_fwl_aws,
+                'FWL_LIN': update_fwl_aws,
+                'FWL_OCI': update_fwl_aws,
             }
 
             if len(res_compose_ok) > 1:
@@ -355,5 +382,10 @@ def run_and_install():
     # Flaskmyip().check_ipv4()
     # Flaskmyip(args=True).restart_salt()
 
+    # Teste update rules
+    # Flaskmyip().update_rules(_do=True)
+    # Flaskmyip().update_rules(_aws=True)
+    # Flaskmyip().update_rules(_lin=True)
+    # Flaskmyip().update_rules(_oci=True)
+
 run_and_install()
-# Flaskmyip().update_rules()

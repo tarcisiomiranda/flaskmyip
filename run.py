@@ -178,7 +178,7 @@ class Flaskmyip:
                 retorno = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
 
             else:
-                retorno = False
+                return None
 
         except Exception as err:
             print('Erro no update rule {}: {}'.format(nuvem, err))

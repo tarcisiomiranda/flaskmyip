@@ -23,13 +23,13 @@ class TMTelegram:
                         domain_update.append(do_su)
 
             MSG=f"""\
-<b>OLD_IP:</b> {kwargs.get('OLD_IP').strip()}
-<b>NEW_IP:</b> {kwargs.get('NEW_IP').strip()}
-<b>FWL_DO:</b> {kwargs.get('FWL_DO').strip()}
-<b>FWL_AWS:</b> {kwargs.get('FWL_DO').strip()}
-<b>FWL_LIN:</b> {kwargs.get('FWL_LIN').strip()}
-<b>FWL_OCI:</b> {kwargs.get('FWL_OCI').strip()}
-<b>DOMAIN:</b> {domain_update} 
+<b>OLD_IP:</b> {kwargs.get('OLD_IP').strip() if isinstance(kwargs.get('OLD_IP'), str) else kwargs.get('OLD_IP')}
+<b>NEW_IP:</b> {kwargs.get('NEW_IP').strip() if isinstance(kwargs.get('NEW_IP'), str) else kwargs.get('NEW_IP')}
+<b>FWL_DO:</b> {kwargs.get('FWL_DO').strip() if isinstance(kwargs.get('FWL_DO'), str) else kwargs.get('FWL_DO')}
+<b>FWL_AWS:</b> {kwargs.get('FWL_AWS').strip() if isinstance(kwargs.get('FWL_AWS'), str) else kwargs.get('FWL_AWS')}
+<b>FWL_LIN:</b> {kwargs.get('FWL_LIN').strip() if isinstance(kwargs.get('FWL_LIN'), str) else kwargs.get('FWL_LIN')}
+<b>FWL_OCI:</b> {kwargs.get('FWL_OCI').strip() if isinstance(kwargs.get('FWL_OCI'), str) else kwargs.get('FWL_OCI')}
+<b>DOMAIN:</b> {domain_update}
 """
 
         # continue script

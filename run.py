@@ -264,8 +264,8 @@ class Flaskmyip:
                 'OLD_IP': file_ipv4,
                 'FWL_DO': update_fwl_do,
                 'FWL_AWS': update_fwl_aws,
-                'FWL_LIN': update_fwl_aws,
-                'FWL_OCI': update_fwl_aws,
+                'FWL_LIN': update_fwl_lin,
+                'FWL_OCI': update_fwl_oci,
             }
 
             if len(res_compose_ok) > 1:

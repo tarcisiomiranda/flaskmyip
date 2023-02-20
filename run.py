@@ -166,6 +166,7 @@ class Flaskmyip:
 
     def update_rules(self, _do=False, _aws=False, _oci=False, _lin=False):
         pub_ipv4 = self.public_ipv4()
+        # Fazer separacao de False para error, assim consigo indentificar as nuvems com error
         try:
             if _do:
                 retorno = API_DO().update_fw(ipv4=pub_ipv4, fwl=self.fwl_do)
@@ -175,6 +176,9 @@ class Flaskmyip:
                 retorno = API_OCI().update_rules(ipv4=pub_ipv4)
             elif _lin:
                 retorno = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
+
+            else:
+                retorno = False
 
         except Exception as err:
             print('Erro no update rule {}: {}'.format(nuvem, err))

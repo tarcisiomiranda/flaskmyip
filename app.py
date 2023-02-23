@@ -1,10 +1,11 @@
 #!flask/bin/python
 from flask import Flask, jsonify, request, redirect
+from telegram import TMTelegram
 from decouple import config
 import os
 
 amb = os.getenv('AMB', False)
-app = Flask(__name__)
+app = Flask(__name__, template_folder='html')
 
 @app.route('/', methods=['GET'])
 def get_tasks():
@@ -43,6 +44,34 @@ def home_ip():
 
     else:
         return 'Oh my God!'
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        host = None
+        if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
+            host = request.environ['REMOTE_ADDR']
+        else:
+            host = request.environ['HTTP_X_FORWARDED_FOR']
+
+        name = request.form.get('name')
+
+        if name and host is not None:
+            request_acess = {
+                'name': name,
+                'host': host,
+            }
+            # send msg telegram
+            TMTelegram().send_msg(request_acess)
+            message = 'Solicitação enviada!'
+        else:
+            message = 'Preencha seu nome!'
+
+        return render_template('index.html', message=message)
+
+    return render_template('index.html')
+
 
 @app.route('/doidera/<string:name>/<int:age>')
 def with_url_variables(name: str, age: int):

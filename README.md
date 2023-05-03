@@ -83,3 +83,33 @@ openssl rsa -in server.key -text > private.pem
 
 # tmux 
 setw synchronize-panes
+
+
+# isntall dep
+pip3 install paramiko
+
+
+# GPG
+- https://medium.com/@almirx101/pgp-key-pair-generation-and-encryption-and-decryption-examples-in-python-3-a72f56477c22
+
+
+# AWS CLI
+***AIM***
+AKIA3EFLTVJD3567QKOY
+9sWIdTN2wzRN2a+xvPV8RjPJCvmNUhvxmRkfmOsC
+
+
+# AWS isntall CLI
+***Linux_x64***
+```
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+unzip awscliv2.zip && \
+sudo ./aws/install
+```
+
+***Linux_arm64***
+```
+curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
+unzip awscliv2.zip && \
+sudo ./aws/install
+```

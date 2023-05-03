@@ -331,8 +331,13 @@ class Flaskmyip:
                         res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
 
                         if pub_ipv4 != res_ssh[0]:
-                            res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], \
-                                cmmd='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"')
+                            # TODO Fazer a verificação se é systemd ou serviced (agora vamos testar)
+                            if server[6].lower() == 'systemd':
+                                cmmd_exe='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"'
+                            else:
+                                cmmd_exe='service salt-minion restart && sleep 0.4 && service salt-minion status | egrep -i "is running|status"'
+                            # Full command ssh
+                            res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], cmmd=cmmd_exe)
                             print('IP4_DIFF', res_salt)
                             if res_salt == 'restart':
                                 servers_ok.append(server[1])

@@ -31,8 +31,11 @@ from lib.ssh_cmd import SshNodes
 from lib.home_ip import HomeIP
 
 ''' Ignore Warn HTTPS Cert '''
-from urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# from urllib3.exceptions import InsecureRequestWarning
+# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+import urllib3
+urllib3.disable_warnings()
 
 ''' Process Lock '''
 processing_lock = threading.Lock()
@@ -308,6 +311,8 @@ def get_public_ipv4():
 
         pub_ipv4 = public_ipv4()
         file_ipv4 = ipv4_file()
+        print('|===> ', pub_ipv4)
+        print('|===> ', file_ipv4)
 
         if pub_ipv4 != file_ipv4:
             file_domains = read_domain()
@@ -492,15 +497,15 @@ def rotas():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some inputs.')
-    parser.add_argument('--logging', action='store_true',
+    parser.add_argument('--prd', action='store_true',
                         help='activate logging')
-    parser.add_argument('--restart', action='store_true',
+    parser.add_argument('--dev', action='store_true',
                         help='restart salt')
 
     ''' Args '''
     args = parser.parse_args()
-    run_logging = args.logging
-    run_restart = args.restart
+    run_prd = args.prd
+    run_dev = args.dev
 
     ''' Setup Scheduler '''
     app.config.from_object(ConfigScheduler())
@@ -514,7 +519,7 @@ if __name__ == '__main__':
     ''' Time Now '''
     agora()
 
-    if run_logging:
+    if run_dev:
         Flaskmyip(args=True)
         print(' * Basic Auth: Enabled')
         print(' * User: admin')
@@ -522,10 +527,13 @@ if __name__ == '__main__':
         print(' * Running: Flask Development...')
         app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=True)
 
-    if run_restart:
+    if run_prd:
         print(' * Running:  Production...')
         app.run(debug=False, host='0.0.0.0', port=3002, use_reloader=False)
 
     else:
-        print('Invalid app mode. Use "dev" or "prd".')
-        print('Use --auth to request a authenticated route".')
+        print('Invalid app mode. Use "--dev" or "--prd".')
+        print('--dev: debug on; reload on')
+        print('--prd: debug off; reload off')
+        # print('Use --auth to request a authenticated route".')
+

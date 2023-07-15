@@ -1,5 +1,7 @@
 from requests import get
 import json
+import urllib3
+urllib3.disable_warnings()
 
 
 class Getpubip:
@@ -8,7 +10,7 @@ class Getpubip:
 
     def getipv4(self):
         try:
-            ip = get(self.url, timeout=10).text
+            ip = get(self.url, timeout=10, verify=False).text
             ip = json.loads(ip)
             return ip
 
@@ -17,3 +19,7 @@ class Getpubip:
                 'status': 500,
                 'message': 'Error when getting ipv4 - {}'.format(err)
             }
+
+if __name__ == '__main__':
+  print('Meu IP: ', Getpubip().getipv4())
+

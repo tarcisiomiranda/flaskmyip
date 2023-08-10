@@ -113,3 +113,8 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zi
 unzip awscliv2.zip && \
 sudo ./aws/install
 ```
+
+## Lib da autenticação dois passos
+```
+pip install pyotp
+```

@@ -5,35 +5,31 @@ class TMTelegram:
     def __init__(self):
         self.url = 'https://api.telegram.org/'
 
+
     def send_msg(self, **kwargs):
-        if kwargs.get('OTHER'):
-            MSG=f"""\
-<b>____STATUS:</b> <b>Salt hosts Minion</b>
-<b>IC_RESTART:</b> {kwargs.get('IC_RESTART')}
-<b>IC___ERROR:</b> {kwargs.get('IC_ERROR')}
-"""
+        # print('KWARGS ', kwargs)
+        def get_value(data):
+            print('DATA', data)
+            return data.strip() if data is not None and not isinstance(data, bool) else None
 
-        elif len(kwargs) > 3:
-            domain_update = []
-            if len(kwargs.get('Domains Success')) >= 1:
-                for d in kwargs.get('Domains Success'):
-                    if bool(d.get('result')):
-                        do_su = d.get('result')
-                        do_su = do_su.get('name')
-                        domain_update.append(do_su)
-
-            MSG=f"""\
-<b>OLD_IP:</b> {kwargs.get('OLD_IP').strip() if isinstance(kwargs.get('OLD_IP'), str) else kwargs.get('OLD_IP')}
-<b>NEW_IP:</b> {kwargs.get('NEW_IP').strip() if isinstance(kwargs.get('NEW_IP'), str) else kwargs.get('NEW_IP')}
-<b>FWL_DO:</b> {kwargs.get('FWL_DO').strip() if isinstance(kwargs.get('FWL_DO'), str) else kwargs.get('FWL_DO')}
-<b>FWL_AWS:</b> {kwargs.get('FWL_AWS').strip() if isinstance(kwargs.get('FWL_AWS'), str) else kwargs.get('FWL_AWS')}
-<b>FWL_LIN:</b> {kwargs.get('FWL_LIN').strip() if isinstance(kwargs.get('FWL_LIN'), str) else kwargs.get('FWL_LIN')}
-<b>FWL_OCI:</b> {kwargs.get('FWL_OCI').strip() if isinstance(kwargs.get('FWL_OCI'), str) else kwargs.get('FWL_OCI')}
-<b>DOMAIN:</b> {domain_update}
-"""
-
-        # continue script
-        if kwargs.get('MSG'):
+        if kwargs.get('UPDATE'):
+            domain_update = [item['result']['name'] for item in kwargs['UPDATE']['Domains Success']]
+            MSG = f'''\
+OLD_IP4: {get_value(kwargs['UPDATE'].get('OLD_IP'))}
+NEW_IP4: {get_value(kwargs['UPDATE'].get('NEW_IP'))}
+FWL_DOC: {get_value(kwargs['UPDATE'].get('FWL_DO'))}
+FWL_AWS: {get_value(kwargs['UPDATE'].get('FWL_AWS'))}
+FWL_LIN: {get_value(kwargs['UPDATE'].get('FWL_LIN'))}
+FWL_OCI: {get_value(kwargs['UPDATE'].get('FWL_OCI'))}
+DOMAINS: {domain_update}
+'''
+        elif kwargs.get('RESTART'):
+            MSG = f'''\
+Salt-Minion Restarted
+OK: {kwargs['RESTART'].get('OK')}
+ER: {kwargs['RESTART'].get('ER')}
+'''
+        else:
             MSG = kwargs.get('MSG')
 
         try:
@@ -47,7 +43,7 @@ class TMTelegram:
             else:
                 params = (
                     ('chat_id', kwargs.get('CHAT_ID')),
-                    ('text', MSG),
+                    ('text', f'<code>{MSG}</code>'),
                     ('parse_mode', 'HTML')
                 )
 

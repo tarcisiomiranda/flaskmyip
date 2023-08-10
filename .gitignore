@@ -10,3 +10,4 @@ pgp_keys
 keys_gpg/do_key.txt
 id_rsa
 keys_gpg/do_key.enc
+clouds/__pycache__

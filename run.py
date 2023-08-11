@@ -442,7 +442,7 @@ if __name__ == '__main__':
     scheduler.start()
 
     ''' Set Pretty Regular Flask '''
-    current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
+    app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
     # app.config['AUTH_REQUIRED'] = app_auth
 
     ''' Time Now '''

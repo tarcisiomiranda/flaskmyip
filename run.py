@@ -440,10 +440,14 @@ if __name__ == '__main__':
     app.config.from_object(ConfigScheduler())
     scheduler.init_app(app)
     scheduler.start()
+
+    ''' Set Pretty Regular Flask '''
+    current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
+    # app.config['AUTH_REQUIRED'] = app_auth
+
     ''' Time Now '''
     agora()
 
-    # app.config['AUTH_REQUIRED'] = app_auth
     if run_logging:
         Flaskmyip(args=True)
         print(' * Basic Auth: Enabled')

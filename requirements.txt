@@ -3,7 +3,7 @@ Flask-APScheduler
 APScheduler
 mysql-connector-python
 python-decouple
-requests
+requests==2.31.0
 colorama
 pendulum
 botocore

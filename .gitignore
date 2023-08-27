@@ -1,13 +1,15 @@
-ip.txt
-domains.txt
+# Cache python
 lib/__pycache__
-.env
-key_pass.pem
-home_ip.txt
-date_renew_ip.txt
-servers.txt
-pgp_keys
-keys_gpg/do_key.txt
-id_rsa
-keys_gpg/do_key.enc
 clouds/__pycache__
+# Secrets
+keys_gpg/do_key.txt
+keys_gpg/do_key.enc
+# datashets
+datasets
+# Keys
+key_pass.pem
+pgp_keys
+id_rsa
+.env
+# Others
+misc

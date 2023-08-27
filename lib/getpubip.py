@@ -8,7 +8,7 @@ class Getpubip:
 
     def getipv4(self):
         try:
-            ip = get(self.url).text
+            ip = get(self.url, timeout=10).text
             ip = json.loads(ip)
             return ip
 

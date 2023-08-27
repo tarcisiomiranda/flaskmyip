@@ -13,3 +13,5 @@ pyotp
 pytz
 pika
 python-dotenv
+PyYAML
+paramiko

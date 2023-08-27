@@ -29,6 +29,12 @@ Salt-Minion Restarted
 OK: {kwargs['RESTART'].get('OK')}
 ER: {kwargs['RESTART'].get('ER')}
 '''
+        elif kwargs.get('REQUEST'):
+            MSG = f'''\
+Request acess service
+NOME: {kwargs['REQUEST'].get('name', '?')}
+HOST: {kwargs['REQUEST'].get('host', '?')}
+    '''
         else:
             MSG = kwargs.get('MSG')
 

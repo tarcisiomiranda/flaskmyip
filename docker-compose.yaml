@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  flaskmyip:
+    image: ${IMAGE_DOCKER:-tarcisiome}/flaskmyip:latest
+    container_name: flaskmyip
+    env_file: ['.env']
+    restart: unless-stopped
+    ports: ['3002:3002']
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./${PYTHON_FILE:-run}.py:/srv/run.py
+    networks:
+      - ${NETWORK_NAME:-ce_frontend}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1000m"
+
+
+networks:
+  observability_gb-devops-network:
+    external: true
+  ce_frontend:
+    external: true

@@ -1,0 +1,31 @@
+FROM alpine:3.18
+
+ENV AMB=prod
+
+RUN echo "America/Sao_Paulo" > /etc/timezone
+RUN apk add python3 \
+    && apk add py3-pip \
+    && apk add tzdata
+
+COPY ./requirements.txt /srv/requirements.txt
+RUN pip install -r /srv/requirements.txt
+
+COPY ./lib /srv/lib
+RUN rm -fr /srv/lib/__pycache__
+
+COPY ./clouds /srv/clouds
+RUN rm -fr /srv/clouds/__pycache__
+
+COPY ./datasets /srv/datasets
+COPY ./.env /srv/.env
+
+COPY ./html /srv/html
+
+RUN rm -rf /var/lib/apk/* /tmp/* /var/tmp/*
+RUN chown -R 1000:1000 /srv
+
+WORKDIR /srv
+COPY ./.env /srv/.env
+
+ENTRYPOINT [ "python3", "run.py" ]
+CMD [ "--logging" ]

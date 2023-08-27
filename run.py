@@ -57,19 +57,13 @@ class Flaskmyip:
         # Telegram
         self.BOT_ID = config('BOT_ID', default=False)
         self.CHAT_ID = config('CHAT_ID', default=False)
-        # Dir log
-        self.DIR_LOG = '/var/log/'
-        # Dir log and File log
-        if args == None:
-            self.rec_log = False
-        elif args:
-            self.rec_log = True
+        self.rec_log = False if args == None else True
         self.local_dir = str(pathlib.Path(__file__).parent.resolve())
-        self.filelog = self.DIR_LOG + 'checkip.log'
-        self.filetxt = self.local_dir + '/ip.txt'
-        self.filerec = self.local_dir + '/domains.txt'
-        self.filedte = self.local_dir + '/date_renew_ip.txt'
-        self.fserver = self.local_dir + '/servers.txt'
+        self.filelog  = self.local_dir + '/flaskmyip.log'
+        self.filetxt  = self.local_dir + '/datasets/ip.txt'
+        self.filerec  = self.local_dir + '/datasets/domains.txt'
+        self.filedte  = self.local_dir + '/datasets/date_renew_ip.txt'
+        self.fserver  = self.local_dir + '/datasets/servers.txt'
         # Firewall API
         self.fwl_do = config('FWL_DO', default=False)
         self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
@@ -238,7 +232,7 @@ def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
 
     return retorno if retorno else False
 
-@scheduler.task(id='check_ipv4', trigger=trigger_check_ip)
+@scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/check_ipv4', methods=['GET'])
 def check_ipv4():
     with processing_lock:
@@ -367,60 +361,61 @@ def restart_salt():
     else:
         return False
 
-@scheduler.task(id='restart_ssh_salt', trigger=trigger_ssh_salt)
+@scheduler.task(id='restart_ssh_salt', trigger=trigger_ssh_salt, misfire_grace_time=50)
 @app.route('/restart_ssh_salt', methods=['GET'])
 def restart_ssh_salt():
-    pub_ipv4 = public_ipv4()
-    # reiniciar servidores que possuem salt
-    with open(_flaskmyip.fserver, 'r') as file:
-        srv = file.read()
-        file.close()
+    with processing_lock:
+        pub_ipv4 = public_ipv4()
+        # reiniciar servidores que possuem salt
+        with open(_flaskmyip.fserver, 'r') as file:
+            srv = file.read()
+            file.close()
 
-    servers_ok = []
-    servers_er = []
-    for s in srv.split('\n'):
-        server = s.split(';')
-        try:
-            if len(server) > 1:
-                if server[0] == 'LNX':
-                    # Verificar se o IP é o mesmo
-                    res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
-                    if pub_ipv4 == res_ssh[0]:
-                        # Linux | systemd || init
-                        if server[6].lower() == 'systemd':
-                            cmmd_exe='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"'
-                        else:
-                            cmmd_exe='''\
-                        restart_salt=$({ service salt-minion restart && sleep 0.4 && service salt-minion status;} 2>&1 \
-                        | grep -E 'running|status' ); echo "$restart_salt"
-                            '''
-                        # Full command ssh
-                        res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4],\
-                                passphrase=server[5], cmmd=cmmd_exe, init_system=server[6])
-                        if res_salt:
-                            servers_ok.append(server[1])
-                        elif not res_salt:
-                            servers_er.append(server[1])
+        servers_ok = []
+        servers_er = []
+        for s in srv.split('\n'):
+            server = s.split(';')
+            try:
+                if len(server) > 1:
+                    if server[0] == 'LNX':
+                        # Verificar se o IP é o mesmo
+                        res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
+                        if pub_ipv4 == res_ssh[0]:
+                            # Linux | systemd || init
+                            if server[6].lower() == 'systemd':
+                                cmmd_exe='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"'
+                            else:
+                                cmmd_exe='''\
+                            restart_salt=$({ service salt-minion restart && sleep 0.4 && service salt-minion status;} 2>&1 \
+                            | grep -E 'running|status' ); echo "$restart_salt"
+                                '''
+                            # Full command ssh
+                            res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4],\
+                                    passphrase=server[5], cmmd=cmmd_exe, init_system=server[6])
+                            if res_salt:
+                                servers_ok.append(server[1])
+                            elif not res_salt:
+                                servers_er.append(server[1])
 
-        except Exception as err:
-            servers_er.append(server[1])
-            print(str(err))
+            except Exception as err:
+                servers_er.append(server[1])
+                print(str(err))
 
-    if servers_ok != []:
-        res_data = {
-        'CHAT_ID': _flaskmyip.CHAT_ID,
-        'BOT_ID': _flaskmyip.BOT_ID,
-        'RESTART' :{
-            'OK': servers_ok,
-            'ER': servers_er,
+        if servers_ok != []:
+            res_data = {
+            'CHAT_ID': _flaskmyip.CHAT_ID,
+            'BOT_ID': _flaskmyip.BOT_ID,
+            'RESTART' :{
+                'OK': servers_ok,
+                'ER': servers_er,
+                }
             }
-        }
 
-        send_check(**res_data)
-        return jsonify({"success": f'Restart with success salt cloud vms'}, 200)
+            send_check(**res_data)
+            return jsonify({"success": f'Restart with success salt cloud vms'}, 200)
 
-    else:
-        return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
+        else:
+            return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
 
 
 if __name__ == '__main__':
@@ -429,9 +424,8 @@ if __name__ == '__main__':
                         help='activate logging')
     parser.add_argument('--restart', action='store_true',
                         help='restart salt')
-    # parser.add_argument('--', action='store_true',
-                        # help='restart salt')
 
+    ''' Args '''
     args = parser.parse_args()
     run_logging = args.logging
     run_restart = args.restart

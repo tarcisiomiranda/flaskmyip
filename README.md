@@ -71,11 +71,8 @@ curl -X GET http://test.api
 
 ## Build your docker image
 ```docker
-docker build -t chephei/flaskmyip:1.4 .
+docker build -t tarcisiome/flaskmyip:latest -f docker/Dockerfile_home .
 ```
-
-
-
 
 # https://stackoverflow.com/questions/991758/how-to-get-pem-file-from-key-and-crt-files
 openssl rsa -in server.key -text > private.pem

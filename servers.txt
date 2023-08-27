@@ -1,3 +1,0 @@
-LNX;oci.domain.me;22;root;key_pass.pem;1234
-LNX;vultr.domain.me;22;root;key_pass.pem;1234
-LNX;ubuntu.domain.net;2222;root;key_pass.pem;1234

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   flaskmyip:
-    image: ${IMAGE_DOCKER:-tarcisiome}/flaskmyip:latest
+    image: ${IMAGE_DOCKER:-registry.tarcisio.me/home}/flaskmyip:latest
     container_name: flaskmyip
     env_file: ['.env']
     restart: unless-stopped

@@ -452,7 +452,7 @@ if __name__ == '__main__':
 
     if run_restart:
         print(' * Running:  Production...')
-        app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=True)
+        app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=False)
 
     else:
         print('Invalid app mode. Use "dev" or "prd".')

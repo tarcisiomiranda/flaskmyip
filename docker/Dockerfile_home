@@ -32,4 +32,4 @@ COPY ./.env /srv/.env
 RUN apk del .build-deps
 
 ENTRYPOINT [ "python3", "run.py" ]
-CMD [ "--logging" ]
+CMD [ "--restart" ]

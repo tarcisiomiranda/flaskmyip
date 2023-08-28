@@ -71,7 +71,11 @@ curl -X GET http://test.api
 
 ## Build your docker image
 ```docker
-docker build -t tarcisiome/flaskmyip:latest -f docker/Dockerfile_home .
+# Build for AMD64
+docker build -t registry.tarcisio.me/home/flaskmyip:latest -f docker/Dockerfile_home .
+
+# Build for raspberry
+root@alpinho /srv/flaskmyip (master)$ docker build -t registry.tarcisio.me/home/flaskmyip:armv7l -f docker/Dockerfile_home .
 ```
 
 # https://stackoverflow.com/questions/991758/how-to-get-pem-file-from-key-and-crt-files

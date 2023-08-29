@@ -1,6 +1,7 @@
 # Cache python
 lib/__pycache__
 clouds/__pycache__
+wakeonlan/__pycache__
 # Secrets
 keys_gpg/do_key.txt
 keys_gpg/do_key.enc

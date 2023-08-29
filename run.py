@@ -2,8 +2,10 @@ from datetime import datetime, timedelta, date
 from apscheduler.triggers.cron import CronTrigger
 from flask_apscheduler import APScheduler
 from flask import Flask, jsonify, current_app
+from requests.auth import HTTPBasicAuth
 from os.path import exists
 from pytz import timezone
+import routeros_api
 import subprocess
 import threading
 import argparse
@@ -85,6 +87,34 @@ def create_response(data, status_code=200):
                 direct_passthrough=True,
             )
     return response
+
+import routeros_api
+def add_to_address_list(list_name, new_address, comment=''):
+    con = routeros_api.RouterOsApiPool('192.168.29.1', username='admin', password='123.senha', plaintext_login=True)
+    api = con.get_api()
+    address_list = api.get_resource('/ip/firewall/address-list')
+
+    '''
+    # Recuperar e imprimir todas as regras da address-list
+    all_rules = address_list.get()
+    print("Todas as regras da address-list:")
+    for rule in all_rules:
+        print(rule)
+    '''
+    try:
+        address_list.add(address=new_address,comment=comment,list=list_name)
+        new_address_list = address_list.get(comment=list_name)
+    except Exception as err:
+        print('Error Mikrotik api, ', str(err))
+        new_address_list = 'address already have such entry or error api'
+        pass
+    finally:
+        con.disconnect()
+
+    if new_address_list == []:
+        return 'success add new address'
+    else:
+        return 'address already have such entry or error api'
 
 @app.route('/', methods=['GET'])
 def agora():
@@ -231,6 +261,31 @@ def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
         return False
 
     return retorno if retorno else False
+
+@scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
+@app.route('/update_rule', methods=['GET'])
+def update_rule():
+    # url = "https://ip.tarcisio.me/ip_external"
+    url = "http://192.168.29.12:8000/ip_external"
+    username = "admin"
+    password = "123.senha"
+    response = requests.get(url, auth=HTTPBasicAuth(username, password))
+
+    if response.status_code == 200:
+        if response.text == 'NA':
+            return 'rule ja adicionada ou home_ip vazio'
+        else:
+            _res = response.json()
+            _ipv4 = _res[0].get('ipv4', 'NA')
+            _name = _res[0].get('name', 'NA')
+
+            _res_fwl = add_to_address_list('VPN_EXTERNAL', _ipv4, _name)
+            if 'success' in _res_fwl:
+                return 'Regra adicionada com sucesso'
+            else:
+                return _res_fwl
+    else:
+        return (f"Falha: {response.status_code}")
 
 @scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/check_ipv4', methods=['GET'])
@@ -400,6 +455,7 @@ def restart_ssh_salt():
             except Exception as err:
                 servers_er.append(server[1])
                 print(str(err))
+                pass
 
         if servers_ok != []:
             res_data = {
@@ -452,7 +508,7 @@ if __name__ == '__main__':
 
     if run_restart:
         print(' * Running:  Production...')
-        app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=False)
+        app.run(debug=False, host='0.0.0.0', port=3002, use_reloader=False)
 
     else:
         print('Invalid app mode. Use "dev" or "prd".')

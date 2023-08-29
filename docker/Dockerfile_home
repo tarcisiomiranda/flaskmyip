@@ -29,6 +29,8 @@ RUN chown -R 1000:1000 /srv
 
 WORKDIR /srv
 COPY ./.env /srv/.env
+
+RUN pip install routeros-api
 RUN apk del .build-deps
 
 ENTRYPOINT [ "python3", "run.py" ]

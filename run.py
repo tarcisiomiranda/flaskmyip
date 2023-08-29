@@ -265,8 +265,8 @@ def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
 @scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/update_rule', methods=['GET'])
 def update_rule():
-    # url = "https://ip.tarcisio.me/ip_external"
-    url = "http://192.168.29.12:8000/ip_external"
+    url = "https://ip.tarcisio.me/ip_external"
+    # url = "http://192.168.29.12:8000/ip_external"
     username = "admin"
     password = "123.senha"
     response = requests.get(url, auth=HTTPBasicAuth(username, password))

@@ -48,7 +48,6 @@ class ConfigScheduler:
 trigger_check_ip = CronTrigger(minute='*', timezone=tz)
 trigger_ssh_salt = CronTrigger(hour=1, minute=0, timezone=tz)
 
-_loop = 0
 class Flaskmyip:
     def __init__(self, args=None):
         # Cloudflare
@@ -291,8 +290,6 @@ def run_update_rule():
 @scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/check_ipv4', methods=['GET'])
 def get_public_ipv4():
-    _loop =+ 1
-    print('|----------------------------------------------> ', _loop)
     with processing_lock:
         # Check dir and log file
         ci = check_install()

@@ -264,7 +264,7 @@ def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
 
 @scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/update_rule', methods=['GET'])
-def update_rule():
+def run_update_rule():
     url = "https://ip.tarcisio.me/ip_external"
     # url = "http://192.168.29.12:8000/ip_external"
     username = "admin"
@@ -289,7 +289,7 @@ def update_rule():
 
 @scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/check_ipv4', methods=['GET'])
-def check_ipv4():
+def get_public_ipv4():
     with processing_lock:
         # Check dir and log file
         ci = check_install()
@@ -418,7 +418,7 @@ def restart_salt():
 
 @scheduler.task(id='restart_ssh_salt', trigger=trigger_ssh_salt, misfire_grace_time=50)
 @app.route('/restart_ssh_salt', methods=['GET'])
-def restart_ssh_salt():
+def exec_restart_ssh_salt():
     with processing_lock:
         pub_ipv4 = public_ipv4()
         # reiniciar servidores que possuem salt

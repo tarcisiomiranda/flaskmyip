@@ -269,7 +269,7 @@ def run_update_rule():
     # url = "http://192.168.29.12:8000/ip_external"
     username = "admin"
     password = "123.senha"
-    response = requests.get(url, auth=HTTPBasicAuth(username, password))
+    response = requests.get(url, auth=HTTPBasicAuth(username, password), verify=False)
 
     if response.status_code == 200:
         if response.text == 'NA':
@@ -306,14 +306,16 @@ def get_public_ipv4():
 
         if pub_ipv4 != file_ipv4:
             file_domains = read_domain()
+            '''
             params = (
                     ('n_ip', pub_ipv4),
                     ('pass', config('PASSWD')),
                 )
-            res = requests.get(config('HOME_URL_CHECK'), params=params)
+            res = requests.get(config('HOME_URL_CHECK'), params=params, verify=False)
             # TODO - melhorar a verificacao
             if res.status_code == 200:
                 pass
+            '''
 
             # records
             records = []

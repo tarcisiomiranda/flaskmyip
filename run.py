@@ -22,13 +22,17 @@ from decouple import config
 from clouds.api_linode import API_LINODE
 from clouds.api_oci import API_OCI
 from clouds.api_aws import API_AWS
-from clouds.api_do import API_DO
+from clouds.api_dio import API_DIO
 # Firewalls
 from lib.cloudflare import TMCloudflare
 from lib.telegram import TMTelegram
 from lib.getpubip import Getpubip
 from lib.ssh_cmd import SshNodes
 from lib.home_ip import HomeIP
+
+''' Ignore Warn HTTPS Cert '''
+from urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 ''' Process Lock '''
 processing_lock = threading.Lock()
@@ -67,7 +71,7 @@ class Flaskmyip:
         self.filedte  = self.local_dir + '/datasets/date_renew_ip.txt'
         self.fserver  = self.local_dir + '/datasets/servers.txt'
         # Firewall API
-        self.fwl_do = config('FWL_DO', default=False)
+        self.fwl_dio = config('FWL_DIO', default=False)
         self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
         # print('SYS ARG :', self.rec_log)
 
@@ -237,22 +241,23 @@ def check_install():
 
     return res_check_install
 
-def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
+def update_rules(_dio=False, _aws=False, _oci=False, _lin=False):
     pub_ipv4 = public_ipv4()
+    _reply = False
     _cloud = ''
     try:
-        if _do:
+        if _dio:
             _cloud = 'Digital Ocean'
-            retorno = API_DO().update_fw(ipv4=pub_ipv4, fwl=_flaskmyip.fwl_do)
+            _reply = API_DIO().update_fw(ipv4=pub_ipv4, fwl=_flaskmyip.fwl_dio)
         elif _aws:
             _cloud = 'AWS'
-            retorno = API_AWS(ipv4=pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
+            _reply = API_AWS(ipv4=pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
         elif _oci:
             _cloud = 'OCI'
-            retorno = API_OCI().update_rules(ipv4=pub_ipv4)
+            _reply = API_OCI().update_rules(ipv4=pub_ipv4)
         elif _lin:
             _cloud = 'Linode'
-            retorno = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
+            _reply = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
         else:
             return None
 
@@ -260,7 +265,7 @@ def update_rules(_do=False, _aws=False, _oci=False, _lin=False):
         print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
         return False
 
-    return retorno if retorno else False
+    return _reply if bool(_reply) else False
 
 @scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/update_rule', methods=['GET'])
@@ -351,7 +356,7 @@ def get_public_ipv4():
 
             # Update firewall
             print('| ------ START UPDATES FIREWALL ------ |')
-            update_fwl_do =  update_rules(_do=True)
+            update_fwl_dio = update_rules(_dio=False)
             update_fwl_aws = update_rules(_aws=False)
             update_fwl_lin = update_rules(_lin=True)
             update_fwl_oci = update_rules(_oci=True)
@@ -364,7 +369,7 @@ def get_public_ipv4():
                     'Domains Error': res_compose_er,
                     'NEW_IP': pub_ipv4,
                     'OLD_IP': file_ipv4,
-                    'FWL_DO': update_fwl_do,
+                    'FWL_DIO': update_fwl_dio,
                     'FWL_AWS': update_fwl_aws,
                     'FWL_LIN': update_fwl_lin,
                     'FWL_OCI': update_fwl_oci,

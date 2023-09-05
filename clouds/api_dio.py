@@ -5,7 +5,7 @@ import yaml
 import requests
 
 
-class API_DO:
+class API_DIO:
     def __init__(self):
         basedir = os.path.abspath(os.path.dirname(__file__))
         with open('{}/../keys_gpg/do_key.txt'.format(basedir), 'r') as f:
@@ -145,8 +145,8 @@ class API_DO:
 
 # Call
 if __name__ == '__main__':
-    print('FIREWALLS: ', API_DO().get_fw())
-    print('UPDATE_FW: ', API_DO().update_fw())
-    # print(API_DO().get_dropelets())
-    # print((json.dumps(API_DO().get_fw(), indent=1)))
-    # print((yaml.dump(API_DO().get_fw(), default_flow_style=False)))
+    print('FIREWALLS: ', API_DIO().get_fw())
+    print('UPDATE_FW: ', API_DIO().update_fw())
+    # print(API_DIO().get_dropelets())
+    # print((json.dumps(API_DIO().get_fw(), indent=1)))
+    # print((yaml.dump(API_DIO().get_fw(), default_flow_style=False)))

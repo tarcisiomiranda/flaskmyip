@@ -5,22 +5,16 @@ class TMTelegram:
     def __init__(self):
         self.url = 'https://api.telegram.org/'
 
-
     def send_msg(self, **kwargs):
-        # print('KWARGS ', kwargs)
-        def get_value(data):
-            print('DATA', data)
-            return data.strip() if data is not None and not isinstance(data, bool) else None
-
         if kwargs.get('UPDATE'):
             domain_update = [item['result']['name'] for item in kwargs['UPDATE']['Domains Success']]
             MSG = f'''\
-OLD_IP4: {get_value(kwargs['UPDATE'].get('OLD_IP'))}
-NEW_IP4: {get_value(kwargs['UPDATE'].get('NEW_IP'))}
-FWL_DOC: {get_value(kwargs['UPDATE'].get('FWL_DO'))}
-FWL_AWS: {get_value(kwargs['UPDATE'].get('FWL_AWS'))}
-FWL_LIN: {get_value(kwargs['UPDATE'].get('FWL_LIN'))}
-FWL_OCI: {get_value(kwargs['UPDATE'].get('FWL_OCI'))}
+OLD_IP4: {kwargs['UPDATE'].get('OLD_IP', None)}
+NEW_IP4: {kwargs['UPDATE'].get('NEW_IP', None)}
+FWL_DOC: {kwargs['UPDATE'].get('FWL_DIO', None)}
+FWL_AWS: {kwargs['UPDATE'].get('FWL_AWS', None)}
+FWL_LIN: {kwargs['UPDATE'].get('FWL_LIN', None)}
+FWL_OCI: {kwargs['UPDATE'].get('FWL_OCI', None)}
 DOMAINS: {domain_update}
 '''
         elif kwargs.get('RESTART'):

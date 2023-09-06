@@ -480,6 +480,15 @@ def exec_restart_ssh_salt():
         else:
             return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
 
+@app.route('/rotas', methods=['GET'])
+def rotas():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            # 'methods': list(rule.methods),
+            'route': str(rule)
+        })
+    return jsonify(routes)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some inputs.')

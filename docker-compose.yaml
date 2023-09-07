@@ -9,6 +9,7 @@ services:
     ports: ['3002:3002']
     volumes:
       - ./datasets:/srv/datasets
+      - ./keys_gpg:/srv/keys_gpg
       - /etc/localtime:/etc/localtime:ro
       - ./${PYTHON_FILE:-run}.py:/srv/run.py
     networks:

@@ -22,7 +22,11 @@ RUN rm -fr /srv/clouds/__pycache__
 COPY ./datasets /srv/datasets
 COPY ./.env /srv/.env
 
+COPY ./keys_gpg /srv/keys_gpg
 COPY ./html /srv/html
+
+RUN find /srv/keys_gpg/key_oci/ -type f -name "*public*.pem" -exec chmod 0664 {} \;
+RUN find /srv/keys_gpg/key_oci/ -type f -name "*.pem" ! -name "*public*" -exec chmod 0600 {} \;
 
 RUN rm -rf /var/lib/apk/* /tmp/* /var/tmp/*
 RUN chown -R 1000:1000 /srv

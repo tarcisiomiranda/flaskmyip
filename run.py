@@ -77,6 +77,7 @@ class Flaskmyip:
         self.fwl_dio = config('FWL_DIO', default=False)
         self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
         # print('SYS ARG :', self.rec_log)
+        self._count = 0
 
 ''' Instance Flaskmyip '''
 _flaskmyip = Flaskmyip()
@@ -305,7 +306,6 @@ def run_update_rule():
 @scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=120)
 @app.route('/check_ipv4', methods=['GET'])
 def get_public_ipv4():
-    _count = 0
     with processing_lock:
         # Check dir and log file
         ci = check_install()
@@ -392,9 +392,9 @@ def get_public_ipv4():
             if len(res_compose_ok) > 1:
                 write_ip(ip=pub_ipv4)
                 res = send_check(**data_res)
-                logger.info(f'=========================================================== {res}')
-                _count += 1
-                logger.info(f'=========================================================== {_count}')
+                logger.info(f'\n=========================================================== {res}')
+                _flaskmyip._count += 1
+                logger.info(f'=========================================================== {_flaskmyip._count}\n')
                 data_res.update(res)
 
             if _flaskmyip.rec_log:

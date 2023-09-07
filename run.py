@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, date
+from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from flask_apscheduler import APScheduler
 from flask import Flask, jsonify, current_app
@@ -52,8 +53,13 @@ class ConfigScheduler:
     SCHEDULER_API_ENABLED = True
 
 ''' Cron for jobs '''
-trigger_check_ip = CronTrigger(minute='*', timezone=tz)
-trigger_ssh_salt = CronTrigger(hour=1, minute=0, timezone=tz)
+# trigger_vpn_rule = CronTrigger(minute="*/2", timezone=tz)
+# trigger_check_ip = CronTrigger(minute='*', timezone=tz)
+# trigger_ssh_salt = CronTrigger(hour=1, minute=0, timezone=tz)
+trigger_vpn_rule = IntervalTrigger(seconds=90, timezone=tz)
+trigger_check_ip = IntervalTrigger(seconds=5, timezone=tz)
+trigger_ssh_salt = IntervalTrigger(seconds=3600, timezone=tz)
+
 
 class Flaskmyip:
     def __init__(self, args=None):
@@ -76,8 +82,6 @@ class Flaskmyip:
         # Firewall API
         self.fwl_dio = config('FWL_DIO', default=False)
         self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
-        # print('SYS ARG :', self.rec_log)
-        self._count = 0
 
 ''' Instance Flaskmyip '''
 _flaskmyip = Flaskmyip()
@@ -156,9 +160,9 @@ def get_result():
 
 def public_ipv4():
     gp = Getpubip()
-    pub_ipv4 = gp.getipv4().get('ip')
+    _pub_ipv4 = gp.getipv4().get('ip')
 
-    return pub_ipv4
+    return _pub_ipv4
 
 def ipv4_file():
     file_exists = exists(_flaskmyip.filetxt)
@@ -242,7 +246,7 @@ def check_install():
 
 @app.route('/firewall/<string:_cloud>')
 def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = ''):
-    pub_ipv4 = public_ipv4()
+    _pub_ipv4 = public_ipv4()
     _reply = False
     '''
     # Method URI
@@ -256,16 +260,16 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
     try:
         if _dio or _cloud.lower() == 'dio':
             _cloud = 'Digital Ocean'
-            _reply = API_DIO().update_fw(ipv4=pub_ipv4, fwl=_flaskmyip.fwl_dio)
+            _reply = API_DIO().update_fw(ipv4=_pub_ipv4, fwl=_flaskmyip.fwl_dio)
         elif _aws or _cloud.lower() == 'aws':
             _cloud = 'AWS'
-            _reply = API_AWS(ipv4=pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
+            _reply = API_AWS(ipv4=_pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
         elif _oci or _cloud.lower() == 'oci':
             _cloud = 'OCI'
-            _reply = API_OCI().update_rules(ipv4=pub_ipv4)
+            _reply = API_OCI().update_rules(ipv4=_pub_ipv4)
         elif _lin or _cloud.lower() == 'lin':
             _cloud = 'Linode'
-            _reply = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
+            _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
         else:
             return ("Invalid cloud provider", 400) if _cloud != '' else None
 
@@ -278,7 +282,7 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
     else:
         return _reply if bool(_reply) else False
 
-@scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=120)
+@scheduler.task(id='update_rule', trigger=trigger_vpn_rule, misfire_grace_time=120)
 @app.route('/update_rule', methods=['GET'])
 def run_update_rule():
     url = "https://ip.tarcisio.me/ip_external"
@@ -317,23 +321,16 @@ def get_public_ipv4():
                     'message': 'Error when create dir log or file log'
                 })
 
-        pub_ipv4 = public_ipv4()
+        _pub_ipv4 = public_ipv4()
         file_ipv4 = ipv4_file()
-        print('|IPV4| === > ', pub_ipv4)
-        print('|FILE| === > ', file_ipv4)
+        _log_ipv4 = file_ipv4.replace('\n', '-')
+        print('|IPV4| === > ', _pub_ipv4)
+        print('|FILE| === > ', _log_ipv4)
 
-        if pub_ipv4 != file_ipv4:
+        logger.info(f'| IP_REST: {_pub_ipv4} |')
+        logger.info(f'| IP_FILE: {_log_ipv4} |')
+        if _pub_ipv4 != file_ipv4:
             file_domains = read_domain()
-            '''
-            params = (
-                    ('n_ip', pub_ipv4),
-                    ('pass', config('PASSWD')),
-                )
-            res = requests.get(config('HOME_URL_CHECK'), params=params, verify=False)
-            # TODO - melhorar a verificacao
-            if res.status_code == 200:
-                pass
-            '''
 
             # records
             records = []
@@ -355,32 +352,43 @@ def get_public_ipv4():
             key_cf = {
                 'CF_EMAIL': _flaskmyip.CF_EMAIL,
                 'CF_API_KEY': _flaskmyip.CF_API_KEY,
-                'NEW_IPV4': pub_ipv4
+                'NEW_IPV4': _pub_ipv4
             }
+            
 
             res_compose_ok = []
             res_compose_er = []
-            for compose in update_list:
-                res = TMCloudflare().update_record(compose, **key_cf)
-                if res.get('status') == 500:
-                    res_compose_er.append(res)
-                else:
-                    res_compose_ok.append(res)
+
+            # for compose in update_list:
+            #     res = TMCloudflare().update_record(compose, **key_cf)
+            #     if res.get('status') == 500:
+            #         res_compose_er.append(res)
+            #     else:
+            #         res_compose_ok.append(res)
+
+            # # Update firewall
+            # print('| ------ START UPDATES FIREWALL ------ |')
+            # update_fwl_dio = update_rules(_dio=False)
+            # update_fwl_aws = update_rules(_aws=False)
+            # update_fwl_lin = update_rules(_lin=True)
+            # update_fwl_oci = update_rules(_oci=True)
+            # print('| ------- END UPDATES FIREWALL ------- |')
 
             # Update firewall
             print('| ------ START UPDATES FIREWALL ------ |')
-            update_fwl_dio = update_rules(_dio=False)
-            update_fwl_aws = update_rules(_aws=False)
-            update_fwl_lin = update_rules(_lin=True)
-            update_fwl_oci = update_rules(_oci=True)
+            update_fwl_dio = False
+            update_fwl_aws = False
+            update_fwl_lin = False
+            update_fwl_oci = True
             print('| ------- END UPDATES FIREWALL ------- |')
+
             data_res = {
                 'BOT_ID': _flaskmyip.BOT_ID,
                 'CHAT_ID': _flaskmyip.CHAT_ID,
                 'UPDATE': {
                     'Domains Success': res_compose_ok,
-                    'Domains Error': res_compose_er,
-                    'NEW_IP': pub_ipv4,
+                    'Domains Failure': res_compose_er,
+                    'NEW_IP': _pub_ipv4,
                     'OLD_IP': file_ipv4,
                     'FWL_DIO': update_fwl_dio,
                     'FWL_AWS': update_fwl_aws,
@@ -389,12 +397,10 @@ def get_public_ipv4():
                 }
             }
 
-            if len(res_compose_ok) > 1:
-                write_ip(ip=pub_ipv4)
+            if any([bool(res_compose_ok), bool(res_compose_er),
+                update_fwl_dio, update_fwl_aws, update_fwl_lin, update_fwl_oci]):
+                write_ip(ip=_pub_ipv4)
                 res = send_check(**data_res)
-                logger.info(f'\n=========================================================== {res}')
-                _flaskmyip._count += 1
-                logger.info(f'=========================================================== {_flaskmyip._count}\n')
                 data_res.update(res)
 
             if _flaskmyip.rec_log:
@@ -442,7 +448,7 @@ def restart_salt():
 @app.route('/restart_ssh_salt', methods=['GET'])
 def exec_restart_ssh_salt():
     with processing_lock:
-        pub_ipv4 = public_ipv4()
+        _pub_ipv4 = public_ipv4()
         # reiniciar servidores que possuem salt
         with open(_flaskmyip.fserver, 'r') as file:
             srv = file.read()
@@ -456,7 +462,7 @@ def exec_restart_ssh_salt():
                     if server[0] == 'LNX':
                         # Verificar se o IP é o mesmo
                         res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
-                        if pub_ipv4 == res_ssh[0]:
+                        if _pub_ipv4 == res_ssh[0]:
                             # Linux | systemd || init
                             if server[6].lower() == 'systemd':
                                 cmmd_exe='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"'
@@ -516,14 +522,8 @@ if __name__ == '__main__':
     run_prd = args.prd
     run_dev = args.dev
 
-    ''' Setup Scheduler '''
-    app.config.from_object(ConfigScheduler())
-    scheduler.init_app(app)
-    scheduler.start()
-
     ''' Set Pretty Regular Flask '''
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
-    # app.config['AUTH_REQUIRED'] = app_auth
 
     ''' Time Now '''
     agora()
@@ -532,17 +532,22 @@ if __name__ == '__main__':
         Flaskmyip(args=True)
         print(' * Basic Auth: Enabled')
         print(' * User: admin')
+        print(' * Se deixar o "use_reloader=True" o scheduler vai duplicar toda chamada')
+        print(' * So vai funcionar chamadas via rota no navegador, scheduler desativado em --dev')
 
         print(' * Running: Flask Development...')
         app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=True)
 
-    if run_prd:
+    elif run_prd:
+        ''' Setup Scheduler '''
+        app.config.from_object(ConfigScheduler())
+        scheduler.init_app(app)
+        scheduler.start()
+
         print(' * Running:  Production...')
         app.run(debug=False, host='0.0.0.0', port=3002, use_reloader=False)
 
     else:
         print('Invalid app mode. Use "--dev" or "--prd".')
-        print('--dev: debug on; reload on')
-        print('--prd: debug off; reload off')
-        # print('Use --auth to request a authenticated route".')
-
+        print('--dev: debug on, reload on and scheduler off')
+        print('--prd: debug off and reload off')

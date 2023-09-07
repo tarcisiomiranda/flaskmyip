@@ -276,10 +276,10 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
 
     except Exception as err:
         print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
-        return (jsonify(error=str(err)), 500) if _cloud != '' else False
+        return {'error': str(err)} if _cloud != '' else False
 
     if _cloud != '':
-        return jsonify(_reply if bool(_reply) else False)
+        return {'result': _reply if bool(_reply) else False}
     else:
         return _reply if bool(_reply) else False
 

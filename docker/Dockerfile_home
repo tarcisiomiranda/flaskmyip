@@ -38,4 +38,4 @@ RUN pip install routeros-api
 RUN apk del .build-deps
 
 ENTRYPOINT [ "python3", "run.py" ]
-CMD [ "--restart" ]
+CMD [ "--prd" ]

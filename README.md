@@ -74,8 +74,11 @@ curl -X GET http://test.api
 # Build for AMD64
 docker build -t registry.tarcisio.me/home/flaskmyip:latest -f docker/Dockerfile_home .
 
-# Build for raspberry
-root@alpinho /srv/flaskmyip (master)$ docker build -t registry.tarcisio.me/home/flaskmyip:armv7l -f docker/Dockerfile_home .
+# Build for raspberry FLASK
+docker build -t registry.tarcisio.me/home/flaskmyip:armv7l -f docker/Dockerfile_home .
+
+# Build for raspberry NTP
+docker build -t registry.tarcisio.me/home/ntp:armv7l -f docker/Dockerfile_ntp .
 ```
 
 # https://stackoverflow.com/questions/991758/how-to-get-pem-file-from-key-and-crt-files

@@ -5,7 +5,7 @@ services:
     # build:
     #   context: ./
     #   dockerfile: ./docker/Dockerfile_home
-    image: ${IMAGE_DOCKER:-registry.tarcisio.me/home/flaskmyip:armv7l}
+    image: ${IMAGE_DOCKER_FLASK:-registry.tarcisio.me/home/flaskmyip:armv7l}
     container_name: flaskmyip
     env_file: ['.env']
     restart: unless-stopped
@@ -67,7 +67,7 @@ services:
     build:
       context: ./
       dockerfile: ./docker/Dockerfile_ntp
-    image: tarcisiome/ntp:latest
+    image: ${IMAGE_DOCKER_NTP:-registry.tarcisio.me/home/ntp:armv7l}
     container_name: ntp
     restart: unless-stopped
     volumes:

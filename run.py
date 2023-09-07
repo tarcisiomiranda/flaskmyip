@@ -359,27 +359,19 @@ def get_public_ipv4():
             res_compose_ok = []
             res_compose_er = []
 
-            # for compose in update_list:
-            #     res = TMCloudflare().update_record(compose, **key_cf)
-            #     if res.get('status') == 500:
-            #         res_compose_er.append(res)
-            #     else:
-            #         res_compose_ok.append(res)
-
-            # # Update firewall
-            # print('| ------ START UPDATES FIREWALL ------ |')
-            # update_fwl_dio = update_rules(_dio=False)
-            # update_fwl_aws = update_rules(_aws=False)
-            # update_fwl_lin = update_rules(_lin=True)
-            # update_fwl_oci = update_rules(_oci=True)
-            # print('| ------- END UPDATES FIREWALL ------- |')
+            for compose in update_list:
+                res = TMCloudflare().update_record(compose, **key_cf)
+                if res.get('status') == 500:
+                    res_compose_er.append(res)
+                else:
+                    res_compose_ok.append(res)
 
             # Update firewall
             print('| ------ START UPDATES FIREWALL ------ |')
-            update_fwl_dio = False
-            update_fwl_aws = False
-            update_fwl_lin = False
-            update_fwl_oci = True
+            update_fwl_dio = update_rules(_dio=False)
+            update_fwl_aws = update_rules(_aws=False)
+            update_fwl_lin = update_rules(_lin=True)
+            update_fwl_oci = update_rules(_oci=True)
             print('| ------- END UPDATES FIREWALL ------- |')
 
             data_res = {

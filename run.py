@@ -383,10 +383,10 @@ def get_public_ipv4():
                     'Domains Failure': res_compose_er,
                     'NEW_IP': _pub_ipv4,
                     'OLD_IP': file_ipv4,
-                    'FWL_DIO': update_fwl_dio,
-                    'FWL_AWS': update_fwl_aws,
-                    'FWL_LIN': update_fwl_lin,
-                    'FWL_OCI': update_fwl_oci,
+                    'FWL_DIO': update_fwl_dio.get('result', None),
+                    'FWL_AWS': update_fwl_aws.get('result', None),
+                    'FWL_LIN': update_fwl_lin.get('result', None),
+                    'FWL_OCI': update_fwl_oci.get('result', None),
                 }
             }
 

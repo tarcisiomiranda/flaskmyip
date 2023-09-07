@@ -359,6 +359,7 @@ def get_public_ipv4():
             res_compose_ok = []
             res_compose_er = []
 
+            # Cloudflare update domains
             for compose in update_list:
                 res = TMCloudflare().update_record(compose, **key_cf)
                 if res.get('status') == 500:

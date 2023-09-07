@@ -244,31 +244,44 @@ def check_install():
 
     return res_check_install
 
-def update_rules(_dio=False, _aws=False, _oci=False, _lin=False):
+
+@app.route('/firewall/<string:_cloud>')
+def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = ''):
     pub_ipv4 = public_ipv4()
     _reply = False
-    _cloud = ''
+    '''
+    # Method URI
+    /firewall/oci
+    TODO
+    # Method 2 - ARG
+    /firewall?_cloud=oci
+    request.args.get('_cloud')
+    '''
+
     try:
-        if _dio:
+        if _dio or _cloud.lower() == 'dio':
             _cloud = 'Digital Ocean'
             _reply = API_DIO().update_fw(ipv4=pub_ipv4, fwl=_flaskmyip.fwl_dio)
-        elif _aws:
+        elif _aws or _cloud.lower() == 'aws':
             _cloud = 'AWS'
             _reply = API_AWS(ipv4=pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
-        elif _oci:
+        elif _oci or _cloud.lower() == 'oci':
             _cloud = 'OCI'
             _reply = API_OCI().update_rules(ipv4=pub_ipv4)
-        elif _lin:
+        elif _lin or _cloud.lower() == 'lin':
             _cloud = 'Linode'
             _reply = API_LINODE().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')
         else:
-            return None
+            return ("Invalid cloud provider", 400) if _cloud != '' else None
 
     except Exception as err:
         print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
-        return False
+        return (jsonify(error=str(err)), 500) if _cloud != '' else False
 
-    return _reply if bool(_reply) else False
+    if _cloud != '':
+        return jsonify(_reply if bool(_reply) else False)
+    else:
+        return _reply if bool(_reply) else False
 
 @scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
 @app.route('/update_rule', methods=['GET'])
@@ -311,8 +324,8 @@ def get_public_ipv4():
 
         pub_ipv4 = public_ipv4()
         file_ipv4 = ipv4_file()
-        print('|===> ', pub_ipv4)
-        print('|===> ', file_ipv4)
+        print('|IPV4| === > ', pub_ipv4)
+        print('|FILE| === > ', file_ipv4)
 
         if pub_ipv4 != file_ipv4:
             file_domains = read_domain()

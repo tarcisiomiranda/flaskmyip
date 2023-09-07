@@ -13,35 +13,38 @@ import os
 #     "DEFAULT"
 #     )
 
-
 class API_OCI:
-    def __init__(self):
+    def __init__(self):\
+        # TODO - Melhorar isso pelo amor de Deus
         # self.localdir = os.path.abspath(os.path.dirname(__file__))
         # Pega a pasta base do projeto e nao o local do arquivo como acima
         self.localdir = os.getcwd()
         print('__file__', __file__)
         with open('{}/.env'.format(self.localdir), 'r') as file:
-            print('ENVVV')
             envs = file.read()
-            file.close()
 
         # config
         credentials = {}
+        key_mapping = {
+            'FWL_OCI_USER': 'user',
+            'FWL_OCI_KEY': 'key_file',
+            'FWL_OCI_FINGER': 'fingerprint',
+            'FWL_OCI_TENANCY': 'tenancy',
+            'FWL_OCI_REGION': 'region'
+        }
+
         for env in envs.split('\n'):
-            if 'FWL_OCI' in env.split('=')[0]:
-                if env.split('=')[0] == 'FWL_OCI_SECURITY_LIST_ID':
-                    self.security_list_id = env.split('=')[1].replace('\'', '')
-                if env.split('=')[0] == 'FWL_OCI_USER':
-                    credentials.update({'user': env.split('=')[1].replace('\'', '')})
-                if env.split('=')[0] == 'FWL_OCI_KEY':
-                    private_key = '{}/keys_gpg/key_oci/{}'.format(self.localdir, env.split('=')[1].replace('\'', ''))
-                    credentials.update({'key_file': private_key})
-                if env.split('=')[0] == 'FWL_OCI_FINGER':
-                    credentials.update({'fingerprint': env.split('=')[1].replace('\'', '')})
-                if env.split('=')[0] == 'FWL_OCI_TENANCY':
-                    credentials.update({'tenancy': env.split('=')[1].replace('\'', '')})
-                if env.split('=')[0] == 'FWL_OCI_REGION':
-                    credentials.update({'region': env.split('=')[1].replace('\'', '')})
+            parts = env.split('=')
+            key = parts[0]
+            value = parts[1].replace('\'', '') if len(parts) > 1 else None
+
+            if 'FWL_OCI' in key:
+                if key == 'FWL_OCI_SECURITY_LIST_ID':
+                    self.security_list_id = value
+                elif key == 'FWL_OCI_KEY':
+                    credentials['key_file'] = '{}/keys_gpg/key_oci/{}'.format(self.localdir, value)
+                elif key in key_mapping:
+                    credentials[key_mapping[key]] = value
 
         # config credentials
         self.config = credentials
@@ -59,7 +62,7 @@ class API_OCI:
         list_compartments_response = identity_client.list_compartments(
         compartment_id=self.config['tenancy'],
         lifecycle_state="ACTIVE")
-        print('TUDO SOBRE O COMPARTIMENTO ===> ', list_compartments_response.data)
+        print('|TUDO SOBRE O COMPARTIMENTO| === > ', list_compartments_response.data)
         '''
 
     def update_rules(self, ipv4=None):
@@ -92,7 +95,5 @@ class API_OCI:
             return False
 
 
-# Call
 if __name__ == '__main__':
-    # API_OCI()
     API_OCI().update_rules(ipv4='192.168.29.11')

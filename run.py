@@ -271,7 +271,7 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
             _cloud = 'Linode'
             _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
         else:
-            return {'result': 'Invalid cloud provider'}
+            return {'result': 'Invalid cloud provider' if bool(_cloud) else None }
 
     except Exception as err:
         print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
@@ -351,7 +351,6 @@ def get_public_ipv4():
                 'CF_API_KEY': _flaskmyip.CF_API_KEY,
                 'NEW_IPV4': _pub_ipv4
             }
-            
 
             res_compose_ok = []
             res_compose_er = []

@@ -85,6 +85,10 @@ services:
         ipv4_address: 192.168.255.5
 
 
+volumes:
+  pihole:
+  dnsmasq:
+
 networks:
   ce_frontend:
     external: true

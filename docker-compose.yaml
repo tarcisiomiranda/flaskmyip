@@ -71,7 +71,7 @@ services:
     container_name: ntp
     restart: unless-stopped
     volumes:
-      - ./resolv.conf:/etc/resolv.conf
+      - ./docker/resolv.conf:/etc/resolv.conf
     ports:
       - 123:123/udp
     labels:

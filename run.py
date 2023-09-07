@@ -165,13 +165,11 @@ def ipv4_file():
         print('File não existe!')
         with open(_flaskmyip.filetxt,'w') as file:
             file.write('Arquivo criado com sucesso!')
-            file.close()
 
         return 'Novo Arquivo!'
     else:
         with open(_flaskmyip.filetxt, 'r+', encoding = 'utf-8') as file:
             myip = file.read()
-            file.close()
 
         return myip
 
@@ -179,7 +177,6 @@ def read_domain():
     try:
         with open(_flaskmyip.filerec, 'r+', encoding = 'utf-8') as file:
             my_domains = file.read()
-            file.close()
 
         domains = []
         for d in my_domains.splitlines():
@@ -223,19 +220,16 @@ def check_install():
     if fil_log == False:
         with open(_flaskmyip.filelog,'w') as file:
             file.write('Arquivo de log criado com sucesso!')
-            file.close()
 
     fil_dte = exists(_flaskmyip.filedte)
     if fil_dte == False:
         with open(_flaskmyip.filedte,'w') as file:
             file.write('Arquivo de data criado com sucesso!')
-            file.close()
 
     fil_srv = exists(_flaskmyip.fserver)
     if fil_srv == False:
         with open(_flaskmyip.fserver,'w') as file:
             file.write('Arquivo de servidores criado com sucesso!')
-            file.close()
 
     if fil_log and fil_dte and fil_srv:
         res_check_install = True
@@ -311,6 +305,7 @@ def run_update_rule():
 @scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=120)
 @app.route('/check_ipv4', methods=['GET'])
 def get_public_ipv4():
+    _count = 0
     with processing_lock:
         # Check dir and log file
         ci = check_install()
@@ -397,12 +392,13 @@ def get_public_ipv4():
             if len(res_compose_ok) > 1:
                 write_ip(ip=pub_ipv4)
                 res = send_check(**data_res)
+                print('===========================================================', res)
+                print('===========================================================', _count =+ 1)
                 data_res.update(res)
 
             if _flaskmyip.rec_log:
                 with open(_flaskmyip.filelog,'a') as file:
                     file.write(str(data_res.get('MSG')))
-                    file.close()
 
             return data_res
 
@@ -449,7 +445,6 @@ def exec_restart_ssh_salt():
         # reiniciar servidores que possuem salt
         with open(_flaskmyip.fserver, 'r') as file:
             srv = file.read()
-            file.close()
 
         servers_ok = []
         servers_er = []

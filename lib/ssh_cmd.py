@@ -22,7 +22,6 @@ class SshNodes():
         ssh = paramiko.SSHClient()
         with open('{}/{}'.format(self.two, pkey), 'r') as file:
             pkey = file.read()
-            file.close()
 
         private_key = StringIO(pkey)
         pk = paramiko.RSAKey.from_private_key(private_key)
@@ -43,7 +42,6 @@ class SshNodes():
 if __name__ == '__main__':
     with open(SshNodes().fserver, 'r') as file:
         srv = file.read()
-        file.close()
 
     for s in srv.split('\n'):
         server = s.split(';')

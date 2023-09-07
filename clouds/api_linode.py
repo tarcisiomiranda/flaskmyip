@@ -10,7 +10,6 @@ class API_LINODE:
         basedir = os.path.abspath(os.path.dirname(__file__))
         with open('{}/../keys_gpg/linode_key.txt'.format(basedir), 'r') as f:
             TOKEN_API_LINODE = f.read().strip()
-            f.close()
 
         self.headers = {
             'Content-Type': 'application/json',
@@ -83,6 +82,5 @@ class API_LINODE:
             return False
 
 
-# Call
 if __name__ == '__main__':
     API_LINODE().replace_rule(ipv4='192.168.29.11', fwl_name='teste_api')

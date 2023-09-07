@@ -2,6 +2,9 @@ version: '3'
 
 services:
   flaskmyip:
+    # build:
+    #   context: ./
+    #   dockerfile: ./docker/Dockerfile_home
     image: ${IMAGE_DOCKER:-registry.tarcisio.me/home/flaskmyip:armv7l}
     container_name: flaskmyip
     env_file: ['.env']
@@ -12,16 +15,76 @@ services:
       - ./keys_gpg:/srv/keys_gpg
       - /etc/localtime:/etc/localtime:ro
       - ./${PYTHON_FILE:-run}.py:/srv/run.py
-    networks:
-      - ${NETWORK_NAME:-ce_frontend}
     logging:
       driver: "json-file"
       options:
         max-size: "1000m"
+    networks:
+      ce_frontend:
+        ipv4_address: 192.168.255.2
+
+  cloudflared:
+    container_name: cloudflared
+    image: visibilityspots/cloudflared:latest
+    restart: unless-stopped
+    labels:
+      - traefik.enable=false
+    networks:
+      ce_frontend:
+        ipv4_address: 192.168.255.3
+
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    restart: unless-stopped
+    ports:
+      - "8088:80/tcp"
+      - "53:53/tcp"
+      - "53:53/udp"
+    volumes:
+      - pihole:/etc/pihole
+      - dnsmasq:/etc/dnsmasq.d
+    environment:
+      - ServerIP=192.168.255.4
+      - DNS1=192.168.255.3#5054
+      - DNS2=''
+      - IPv6=false
+      - TZ=America/Sao_Paulo
+      - DNSMASQ_LISTENING=all
+      - WEBPASSWORD=123.senha
+    labels:
+      - traefik.port=80
+      - traefik.backend=pihole
+      - traefik.frontend.priority=3
+      - traefik.frontend.rule=HostRegexp:{subdomain:(pihole).(tarcisio).(me)(.br*)?}
+    networks:
+      ce_frontend:
+        ipv4_address: 192.168.255.4
+    dns:
+      - 127.0.0.1
+
+  ntp:
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile_ntp
+    image: tarcisiome/ntp:latest
+    container_name: ntp
+    restart: unless-stopped
+    volumes:
+      - ./resolv.conf:/etc/resolv.conf
+    ports:
+      - 123:123/udp
+    labels:
+      - traefik.enable=false
+    environment:
+      - TZ=America/Sao_Paulo
+      - NTP_SERVERS=time.cloudflare.com,time1.google.com,ntp1.aliyun.com
+      - LOG_LEVEL=0
+    networks:
+      ce_frontend:
+        ipv4_address: 192.168.255.5
 
 
 networks:
-  observability_gb-devops-network:
-    external: true
   ce_frontend:
     external: true

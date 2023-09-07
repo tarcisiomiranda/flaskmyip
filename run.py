@@ -57,7 +57,7 @@ class ConfigScheduler:
 # trigger_check_ip = CronTrigger(minute='*', timezone=tz)
 # trigger_ssh_salt = CronTrigger(hour=1, minute=0, timezone=tz)
 trigger_vpn_rule = IntervalTrigger(seconds=90, timezone=tz)
-trigger_check_ip = IntervalTrigger(seconds=5, timezone=tz)
+trigger_check_ip = IntervalTrigger(seconds=60, timezone=tz)
 trigger_ssh_salt = IntervalTrigger(seconds=3600, timezone=tz)
 
 

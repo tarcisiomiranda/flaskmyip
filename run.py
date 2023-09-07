@@ -271,16 +271,13 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
             _cloud = 'Linode'
             _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
         else:
-            return ("Invalid cloud provider", 400) if _cloud != '' else None
+            return {'result': 'Invalid cloud provider'}
 
     except Exception as err:
         print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
-        return {'error': str(err)} if _cloud != '' else False
+        return {'result': f'error, {str(err)}'}
 
-    if _cloud != '':
-        return {'result': _reply if bool(_reply) else False}
-    else:
-        return _reply if bool(_reply) else False
+    return {'result': _reply if bool(_reply) else False}
 
 @scheduler.task(id='update_rule', trigger=trigger_vpn_rule, misfire_grace_time=120)
 @app.route('/update_rule', methods=['GET'])

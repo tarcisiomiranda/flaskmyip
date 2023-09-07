@@ -392,9 +392,9 @@ def get_public_ipv4():
             if len(res_compose_ok) > 1:
                 write_ip(ip=pub_ipv4)
                 res = send_check(**data_res)
-                print('===========================================================', res)
+                logger.info(f'=========================================================== {res}')
                 _count += 1
-                print('===========================================================', _count)
+                logger.info(f'=========================================================== {_count}')
                 data_res.update(res)
 
             if _flaskmyip.rec_log:

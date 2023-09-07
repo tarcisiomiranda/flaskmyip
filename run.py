@@ -283,7 +283,7 @@ def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = '
     else:
         return _reply if bool(_reply) else False
 
-@scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=50)
+@scheduler.task(id='update_rule', trigger=trigger_check_ip, misfire_grace_time=120)
 @app.route('/update_rule', methods=['GET'])
 def run_update_rule():
     url = "https://ip.tarcisio.me/ip_external"
@@ -308,7 +308,7 @@ def run_update_rule():
     else:
         return (f"Falha: {response.status_code}")
 
-@scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=50)
+@scheduler.task(id='check_ipv4', trigger=trigger_check_ip, misfire_grace_time=120)
 @app.route('/check_ipv4', methods=['GET'])
 def get_public_ipv4():
     with processing_lock:

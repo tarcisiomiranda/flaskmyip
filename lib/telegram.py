@@ -15,7 +15,7 @@ FWL_DOC: {kwargs['UPDATE'].get('FWL_DIO', None)}
 FWL_AWS: {kwargs['UPDATE'].get('FWL_AWS', None)}
 FWL_LIN: {kwargs['UPDATE'].get('FWL_LIN', None)}
 FWL_OCI: {kwargs['UPDATE'].get('FWL_OCI', None)}
-DOMAINS: {domain_update}
+DOMAINS: http://192.168.29.2:3002/domains
 '''
         elif kwargs.get('RESTART'):
             MSG = f'''\

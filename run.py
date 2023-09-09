@@ -195,6 +195,13 @@ def read_domain():
             'message': 'Error when getting ipv4 - {}'.format(err)
         }
 
+@app.route('/domains', methods=['GET'])
+def get_domains():
+    data = read_domain()
+    json_data = [{'type': item[0], 'domain': item[1]} for item in data if len(item) > 1]
+
+    return json.dumps(json_data, indent=4)
+
 def write_ip(ip=None):
     try:
         with open(_flaskmyip.filetxt,'w') as file:

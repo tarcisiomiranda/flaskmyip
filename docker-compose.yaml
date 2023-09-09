@@ -22,6 +22,8 @@ services:
     networks:
       ce_frontend:
         ipv4_address: 192.168.255.2
+    dns:
+      - 192.168.255.4
 
   cloudflared:
     container_name: cloudflared
@@ -83,6 +85,8 @@ services:
     networks:
       ce_frontend:
         ipv4_address: 192.168.255.5
+    dns:
+      - 192.168.255.4
 
 
 volumes:

@@ -16,8 +16,9 @@ deb-src http://security.debian.org buster/updates main\n\
 # install package building helpers
 # rsyslog for logging (ref https://github.com/stilliard/docker-pure-ftpd/issues/17)
 RUN apt-get update && \
-  apt-get -y --fix-missing install dpkg-dev debhelper &&\
-  apt-get -y build-dep pure-ftpd
+	apt-get -y --fix-missing install dpkg-dev debhelper &&\
+	apt-get -y build-dep pure-ftpd
+	
 
 # Build from source - we need to remove the need for CAP_SYS_NICE and CAP_DAC_READ_SEARCH
 RUN mkdir /tmp/pure-ftpd/ && \
@@ -38,8 +39,8 @@ LABEL maintainer "Andrew Stilliard <andrew.stilliard@gmail.com>"
 # install dependencies
 # FIXME : libcap2 is not a dependency anymore. .deb could be fixed to avoid asking this dependency
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get docker build -t registry.tarcisio.me/home/ftp:armv7l -f docker/Dockerfile_ftpd . && \
-	apt-get  --no-install-recommends --yes install \
+RUN apt-get update && \
+	apt-get --no-install-recommends --yes install \
 	libc6 \
 	libcap2 \
     libmariadb3 \

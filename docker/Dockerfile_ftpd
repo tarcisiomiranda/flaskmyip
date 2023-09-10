@@ -15,7 +15,7 @@ deb-src http://security.debian.org buster/updates main\n\
 
 # install package building helpers
 # rsyslog for logging (ref https://github.com/stilliard/docker-pure-ftpd/issues/17)
-RUN apt-get -y update && \
+RUN apt-get update && \
 	apt-get -y --force-yes --fix-missing install dpkg-dev debhelper &&\
 	apt-get -y build-dep pure-ftpd
 	
@@ -39,7 +39,7 @@ LABEL maintainer "Andrew Stilliard <andrew.stilliard@gmail.com>"
 # install dependencies
 # FIXME : libcap2 is not a dependency anymore. .deb could be fixed to avoid asking this dependency
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get -y update && \
+RUN apt-get update && \
 	apt-get  --no-install-recommends --yes install \
 	libc6 \
 	libcap2 \

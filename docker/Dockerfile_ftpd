@@ -5,13 +5,15 @@ FROM arm32v7/debian:buster as builder
 
 # properly setup debian sources
 ENV DEBIAN_FRONTEND noninteractive
-# RUN echo "deb http://http.debian.net/debian buster main\n\
-# deb-src http://http.debian.net/debian buster main\n\
-# deb http://http.debian.net/debian buster-updates main\n\
-# deb-src http://http.debian.net/debian buster-updates main\n\
-# deb http://security.debian.org buster/updates main\n\
-# deb-src http://security.debian.org buster/updates main\n\
-# " > /etc/apt/sources.list
+RUN echo "deb http://http.debian.net/debian buster main\n\
+deb-src http://http.debian.net/debian buster main\n\
+deb http://http.debian.net/debian buster-updates main\n\
+deb-src http://http.debian.net/debian buster-updates main\n\
+deb http://security.debian.org buster/updates main\n\
+deb-src http://security.debian.org buster/updates main\n\
+" > /etc/apt/sources.list
+
+RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf
 
 # install package building helpers
 # rsyslog for logging (ref https://github.com/stilliard/docker-pure-ftpd/issues/17)

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from flask_apscheduler import APScheduler
-from flask import Flask, jsonify, current_app
+from flask import Flask, jsonify, current_app, request
 from requests.auth import HTTPBasicAuth
 from os.path import exists
 from pytz import timezone
@@ -505,6 +505,27 @@ def rotas():
             'route': str(rule)
         })
     return jsonify(routes)
+
+@app.route('/bkp/mikrotik', methods=['POST'])
+def upload_file():
+    _TOKEN = _flaskmyip.BOT_ID
+    _CHAT_ID = _flaskmyip.CHAT_ID
+    _TELEGRAM_URL = f"https://api.telegram.org/{_TOKEN}/sendDocument"
+    if 'document' not in request.files:
+        return "No file part", 400
+    file = request.files['document']
+    if file.filename == '':
+        return "No selected file", 400
+
+    # Enviando arquivo para Telegram
+    files = {'document': (file.filename, file.read())}
+    data = {'chat_id': _CHAT_ID}
+    _res = requests.post(_TELEGRAM_URL, files=files, data=data)
+    if _res.status_code == 200:
+        return "File uploaded and sent to Telegram", 200
+    else:
+        return "File not uploaded/sent to Telegram", 400
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some inputs.')

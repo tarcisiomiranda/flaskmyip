@@ -5,9 +5,26 @@ class TMTelegram:
     def __init__(self):
         self.url = 'https://api.telegram.org/'
 
+    def organize(self, domains):
+        domain_dict = {}
+
+        for subdomain in domains:
+            parts = subdomain.split('.')
+            sub = parts[0]
+            domain = '.'.join(parts[1:])
+
+            if domain in domain_dict:
+                domain_dict[domain].append(sub)
+            else:
+                domain_dict[domain] = [sub]
+
+        return domain_dict
+
     def send_msg(self, **kwargs):
         if kwargs.get('UPDATE'):
             domain_update = [item['result']['name'] for item in kwargs['UPDATE']['Domains Success']]
+            _organize_sub = self.organize(domain_update)
+
             MSG = f'''\
 OLD_IP4: {kwargs['UPDATE'].get('OLD_IP', None)}
 NEW_IP4: {kwargs['UPDATE'].get('NEW_IP', None)}
@@ -15,7 +32,7 @@ FWL_DOC: {kwargs['UPDATE'].get('FWL_DIO', None)}
 FWL_AWS: {kwargs['UPDATE'].get('FWL_AWS', None)}
 FWL_LIN: {kwargs['UPDATE'].get('FWL_LIN', None)}
 FWL_OCI: {kwargs['UPDATE'].get('FWL_OCI', None)}
-DOMAINS: {domain_update}
+DOMAINS: {_organize_sub}
 DETAILS: http://192.168.29.2:3002/domains
 '''
         elif kwargs.get('RESTART'):

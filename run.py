@@ -506,22 +506,22 @@ def rotas():
         })
     return jsonify(routes)
 
-@app.route('/bkp/mikrotik', methods=['POST'])
+@app.route('/bkp/mikrotik', methods=['GET', 'POST'])
 def upload_file():
     _TOKEN = _flaskmyip.BOT_ID
     _CHAT_ID = _flaskmyip.CHAT_ID
     _TELEGRAM_URL = f"https://api.telegram.org/{_TOKEN}/sendDocument"
+
     if 'document' not in request.files:
         return "No file part", 400
     file = request.files['document']
     if file.filename == '':
         return "No selected file", 400
 
-    # Enviando arquivo para Telegram
     files = {'document': (file.filename, file.read())}
-    data = {'chat_id': _CHAT_ID}
-    _res = requests.post(_TELEGRAM_URL, files=files, data=data)
-    if _res.status_code == 200:
+    _data = {'chat_id': _CHAT_ID}
+    _res_ = requests.post(_TELEGRAM_URL, files=files, data=_data)
+    if _res_.status_code == 200:
         return "File uploaded and sent to Telegram", 200
     else:
         return "File not uploaded/sent to Telegram", 400

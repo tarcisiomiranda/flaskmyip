@@ -79,6 +79,9 @@ docker build -t registry.tarcisio.me/home/flaskmyip:armv7l -f docker/Dockerfile_
 
 # Build for raspberry NTP
 docker build -t registry.tarcisio.me/home/ntp:armv7l -f docker/Dockerfile_ntp .
+
+# Build for raspberry FTPD
+docker build -t registry.tarcisio.me/home/ftp:armv7l -f docker/Dockerfile_ftpd .
 ```
 
 # https://stackoverflow.com/questions/991758/how-to-get-pem-file-from-key-and-crt-files

@@ -76,7 +76,7 @@ RUN echo "" >> /etc/rsyslog.conf && \
 	echo "Updated /etc/rsyslog.conf with /var/log/pure-ftpd/pureftpd.log"
 
 # setup run/init file
-COPY run_ftpd.sh /run.sh
+COPY docker/run_ftpd.sh /run.sh
 RUN chmod u+x /run.sh
 
 # cleaning up

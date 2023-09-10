@@ -506,12 +506,14 @@ def rotas():
         })
     return jsonify(routes)
 
+# TODO - Ainda nao funciona
 @app.route('/bkp/mikrotik', methods=['GET', 'POST'])
 def upload_file():
     _TOKEN = _flaskmyip.BOT_ID
     _CHAT_ID = _flaskmyip.CHAT_ID
     _TELEGRAM_URL = f"https://api.telegram.org/{_TOKEN}/sendDocument"
 
+    # Verificar como receber o arquivo do fetch do mikrotik por aqui
     if 'document' not in request.files:
         return "No file part", 400
     file = request.files['document']

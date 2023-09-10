@@ -88,10 +88,35 @@ services:
     dns:
       - 192.168.255.4
 
+  ftpd:
+    image: stilliard/pure-ftpd
+    restart: unless-stopped
+    container_name: ftpd
+    ports:
+      - "21:21"
+      - "30000-30099:30000-30099"
+    volumes:
+      - "./data/ftpd:/home/admin"
+      - "ftp_passwd:/etc/pure-ftpd/passwd"
+    environment:
+      FTP_PASSIVE_PORTS: 30000:30099
+      PUBLICHOST: "192.168.29.30"
+      FTP_USER_NAME: admin
+      FTP_USER_PASS: 123.senha
+      FTP_USER_HOME: /home/admin
+      PURE_FTPD_FLAGS: "-4"
+      FTP_USER_HOME_PERMISSION: 777
+    networks:
+      ce_frontend:
+        ipv4_address: 192.168.255.6
+    dns:
+      - 192.168.255.4
+
 
 volumes:
   pihole:
   dnsmasq:
+  ftp_passwd:
 
 networks:
   ce_frontend:

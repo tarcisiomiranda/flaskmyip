@@ -160,9 +160,15 @@ def get_result():
 
 def public_ipv4():
     gp = Getpubip()
-    _pub_ipv4 = gp.getipv4().get('ip')
-
-    return _pub_ipv4
+    try:
+        response = gp.getipv4()
+        publicip = response.get('ip')
+        if not publicip:
+            raise ValueError("The 'ip' key was not found in the response.")
+        return publicip
+    except Exception as e:
+        print(f"Error fetching the public IP address: {e}")
+        return None
 
 def ipv4_file():
     file_exists = exists(_flaskmyip.filetxt)
@@ -327,6 +333,16 @@ def get_public_ipv4():
 
         _pub_ipv4 = public_ipv4()
         file_ipv4 = ipv4_file()
+        '''
+            Verificar se o IP realmente esta retornando
+        '''
+        if _pub_ipv4 is None:
+            logger.error(f'ip is null, not a string')
+            return jsonify({
+                    'status': 'Error',
+                    'message': 'ip is null, not a string'
+                })
+
         _log_ipv4 = file_ipv4.replace('\n', '-')
         print('|IPV4| === > ', _pub_ipv4)
         print('|FILE| === > ', _log_ipv4)

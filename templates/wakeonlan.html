@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wake-on-LAN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ffffff;
+            padding: 8px 16px;
+            text-align: left;
+        }
+        th {
+            background-color: #1a1a1a;
+        }
+        tr:nth-child(even) {
+            background-color: #333333;
+        }
+        tr:hover {
+            background-color: #444444;
+        }
+        a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Acordar Computadores</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Dispositivo</th>
+                <th>MAC Address</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, mac in devices.items() %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ mac if mac is string else ', '.join(mac) }}</td>
+                    <td><a href="{{ url_for('wake_device', device_name=name) }}">Acordar</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

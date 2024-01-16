@@ -1,17 +1,17 @@
-Flask
-Flask-APScheduler
-APScheduler
 mysql-connector-python
-python-decouple
+Flask-APScheduler==1.12.4
 requests==2.31.0
+Flask==2.3.3
+python-decouple
 colorama
-pendulum
-botocore
-boto3
-oci
+# pendulum
+# botocore
+# boto3
+# oci
 pyotp
 pytz
 pika
-python-dotenv
 PyYAML
 paramiko
+wakeonlan
+routeros-api

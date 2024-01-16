@@ -13,6 +13,7 @@ deb http://security.debian.org buster/updates main\n\
 deb-src http://security.debian.org buster/updates main\n\
 " > /etc/apt/sources.list
 
+USER root
 RUN rm -f /etc/resolv.conf && echo "nameserver 1.1.1.1" > /etc/resolv.conf
 
 # install package building helpers

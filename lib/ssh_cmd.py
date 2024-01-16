@@ -7,7 +7,7 @@ import pathlib
 class SshNodes():
     def __init__(self):
         self.locate = str(pathlib.Path(__file__).parent.resolve())
-        self.two = path.abspath(path.join(__file__ ,"../../"))
+        self.two = path.abspath(path.join(__file__ ,"../"))
         self.fserver = self.two + '/servers.txt'
         self.cmmd = 'getent hosts salt.tarcisio.me | awk "{ print $1 }"'
 

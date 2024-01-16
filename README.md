@@ -125,3 +125,8 @@ sudo ./aws/install
 ```
 pip install pyotp
 ```
+
+
+```
+docker buildx build --progress=plain -t registry.tarcisio.me/home/flaskmyip:armv7l -f docker/Dockerfile_home .
+```

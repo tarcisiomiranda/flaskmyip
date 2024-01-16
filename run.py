@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, date
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from flask_apscheduler import APScheduler
-from flask import Flask, jsonify, current_app, request
+from flask import Flask, jsonify, current_app, request, render_template
 from requests.auth import HTTPBasicAuth
+from wakeonlan import send_magic_packet
 from os.path import exists
 from pytz import timezone
 import routeros_api
@@ -222,6 +223,8 @@ def write_ip(ip=None):
     }
 
 def send_check(**kwargs):
+    print('DOMINION --> ', kwargs)
+    logger.info('DOMINION --> {0}'.format(kwargs))
     if len(kwargs) > 1:
         res_telegram = TMTelegram().send_msg(**kwargs)
         return res_telegram
@@ -258,39 +261,41 @@ def check_install():
 
 
 @app.route('/firewall/<string:_cloud>')
-def update_rules(_dio=False, _aws=False, _oci=False, _lin=False, _cloud: str = ''):
+def update_rules(_cloud: str = '', **kwargs):
     _pub_ipv4 = public_ipv4()
     _reply = False
-    '''
-    # Method URI
-    /firewall/oci
-    TODO
-    # Method 2 - ARG
-    /firewall?_cloud=oci
-    request.args.get('_cloud')
-    '''
 
     try:
-        if _dio or _cloud.lower() == 'dio':
-            _cloud = 'Digital Ocean'
-            _reply = API_DIO().update_fw(ipv4=_pub_ipv4, fwl=_flaskmyip.fwl_dio)
-        elif _aws or _cloud.lower() == 'aws':
-            _cloud = 'AWS'
-            _reply = API_AWS(ipv4=_pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
-        elif _oci or _cloud.lower() == 'oci':
-            _cloud = 'OCI'
-            _reply = API_OCI().update_rules(ipv4=_pub_ipv4)
-        elif _lin or _cloud.lower() == 'lin':
-            _cloud = 'Linode'
-            _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
+        if _cloud.lower() == 'dio':
+            if config('UPDATE_DIO', default=False, cast=bool):
+                _reply = API_DIO().update_fw(ipv4=_pub_ipv4, fwl=_flaskmyip.fwl_dio)
+            else:
+                print("Atualização para DIO não habilitada.")
+        elif _cloud.lower() == 'aws':
+            if config('UPDATE_AWS', default=False, cast=bool):
+                _reply = API_AWS(ipv4=_pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
+            else:
+                print("Atualização para AWS não habilitada.")
+        elif _cloud.lower() == 'oci':
+            if config('UPDATE_OCI', default=False, cast=bool):
+                _reply = API_OCI().update_rules(ipv4=_pub_ipv4)
+            else:
+                print("Atualização para OCI não habilitada.")
+        elif _cloud.lower() == 'lin':
+            if config('UPDATE_LIN', default=True, cast=bool):
+                _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
+            else:
+                print("Atualização para LINODE não habilitada.")
         else:
-            return {'result': 'Invalid cloud provider' if bool(_cloud) else None }
+            print("Provedor de nuvem inválido ou atualização não habilitada.")
+            return {'result': 'Invalid or disabled cloud provider.'}
 
     except Exception as err:
-        print('Update Rules, cloud {}: err: {}'.format(_cloud, str(err)))
-        return {'result': f'error, {str(err)}'}
+        print(f'Erro ao atualizar regras, cloud {_cloud}: {err}')
+        return {'result': f'Erro, {err}'}
 
-    return {'result': _reply if bool(_reply) else False}
+    return {'result': _reply if _reply else 'Nenhuma atualização realizada ou erro'}
+
 
 @scheduler.task(id='update_rule', trigger=trigger_vpn_rule, misfire_grace_time=120)
 @app.route('/update_rule', methods=['GET'])
@@ -456,61 +461,50 @@ def restart_salt():
     else:
         return False
 
+def execute_ssh_command(host, port, username, pkey, passphrase, command):
+    try:
+        return SshNodes().connect(host=host, port=port, username=username, pkey=pkey, passphrase=passphrase, cmmd=command)
+    except Exception as err:
+        logger.error(f"Erro ao executar comando SSH em {host}: {err}")
+        return None
+
+def restart_salt_on_servers(servers, public_ip):
+    servers_ok, servers_er = [], []
+    for server in servers:
+        if server[0] == 'LNX':
+            res_ssh = execute_ssh_command(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5], command='...')
+            if res_ssh:
+                servers_ok.append(server[1])
+            else:
+                servers_er.append(server[1])
+    return servers_ok, servers_er
+
 @scheduler.task(id='restart_ssh_salt', trigger=trigger_ssh_salt, misfire_grace_time=50)
 @app.route('/restart_ssh_salt', methods=['GET'])
 def exec_restart_ssh_salt():
-    with processing_lock:
-        _pub_ipv4 = public_ipv4()
-        # reiniciar servidores que possuem salt
-        with open(_flaskmyip.fserver, 'r') as file:
-            srv = file.read()
-
-        servers_ok = []
-        servers_er = []
-        for s in srv.split('\n'):
-            server = s.split(';')
+    with app.app_context():
+        with processing_lock:
             try:
-                if len(server) > 1:
-                    if server[0] == 'LNX':
-                        # Verificar se o IP é o mesmo
-                        res_ssh = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4], passphrase=server[5])
-                        if _pub_ipv4 == res_ssh[0]:
-                            # Linux | systemd || init
-                            if server[6].lower() == 'systemd':
-                                cmmd_exe='systemctl restart salt-minion && sleep 0.4 && systemctl status salt-minion | grep "Active:"'
-                            else:
-                                cmmd_exe='''\
-                            restart_salt=$({ service salt-minion restart && sleep 0.4 && service salt-minion status;} 2>&1 \
-                            | grep -E 'running|status' ); echo "$restart_salt"
-                                '''
-                            # Full command ssh
-                            res_salt = SshNodes().connect(host=server[1], port=server[2], username=server[3], pkey=server[4],\
-                                    passphrase=server[5], cmmd=cmmd_exe, init_system=server[6])
-                            if res_salt:
-                                servers_ok.append(server[1])
-                            elif not res_salt:
-                                servers_er.append(server[1])
-
+                _pub_ipv4 = public_ipv4()
+                with open(_flaskmyip.fserver, 'r') as file:
+                    servers = [s.split(';') for s in file.read().split('\n') if s]
+                servers_ok, servers_er = restart_salt_on_servers(servers, _pub_ipv4)
+                if servers_ok:
+                    res_data = {
+                        'CHAT_ID': _flaskmyip.CHAT_ID,
+                        'BOT_ID': _flaskmyip.BOT_ID,
+                        'RESTART': {
+                            'OK': servers_ok,
+                            'ER': servers_er,
+                        }
+                    }
+                    send_check(**res_data)
+                    return jsonify({"success": f'Restart with success salt cloud vms'}, 200)
+                else:
+                    return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
             except Exception as err:
-                servers_er.append(server[1])
-                print(str(err))
-                pass
-
-        if servers_ok != []:
-            res_data = {
-            'CHAT_ID': _flaskmyip.CHAT_ID,
-            'BOT_ID': _flaskmyip.BOT_ID,
-            'RESTART' :{
-                'OK': servers_ok,
-                'ER': servers_er,
-                }
-            }
-
-            send_check(**res_data)
-            return jsonify({"success": f'Restart with success salt cloud vms'}, 200)
-
-        else:
-            return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
+                logger.error(f"Erro em exec_restart_ssh_salt: {err}")
+                return jsonify({"error": f'Erro restart salt cloud vms'}, 500)
 
 @app.route('/rotas', methods=['GET'])
 def rotas():
@@ -543,6 +537,32 @@ def upload_file():
         return "File uploaded and sent to Telegram", 200
     else:
         return "File not uploaded/sent to Telegram", 400
+
+def load_computer():
+    with open('datasets/computadores.json', 'r') as file:
+        return json.load(file)
+
+@app.route('/wake/<device_name>')
+def wake_device(device_name):
+    devices = load_computer()
+
+    if device_name in devices:
+        if device_name == 'work':
+            for mac in devices['work']:
+                send_magic_packet(mac)
+        else:
+            send_magic_packet(devices[device_name])
+        return f"Acordando {device_name}..."
+    else:
+        return "Dispositivo não encontrado", 404
+
+@app.route('/wakeonlan')
+def wakeonlan_page():
+    devices = load_computer()
+    return render_template(
+            'wakeonlan.html',
+            devices=devices
+            )
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ import os
 import requests
 from decouple import config
 # Clouds
-from clouds.api_linode import API_LINODE
+from clouds.api_lin import API_LIN
 from clouds.api_oci import API_OCI
 from clouds.api_aws import API_AWS
 from clouds.api_dio import API_DIO
@@ -38,6 +38,7 @@ from lib.home_ip import HomeIP
 # https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
 import urllib3
 urllib3.disable_warnings()
+local_path = str(pathlib.Path(__file__).parent.resolve())
 
 ''' Process Lock '''
 processing_lock = threading.Lock()
@@ -64,6 +65,7 @@ trigger_ssh_salt = IntervalTrigger(seconds=3600, timezone=tz)
 
 class Flaskmyip:
     def __init__(self, args=None):
+        self.local_dir = local_path
         # Cloudflare
         self.STATUS = config('STATUS', default=False)
         self.ZONE_ID = config('ZONE_ID', default=False)
@@ -73,19 +75,14 @@ class Flaskmyip:
         # Telegram
         self.BOT_ID = config('BOT_ID', default=False)
         self.CHAT_ID = config('CHAT_ID', default=False)
-        self.rec_log = False if args == None else True
-        self.local_dir = str(pathlib.Path(__file__).parent.resolve())
         self.filelog  = self.local_dir + '/flaskmyip.log'
         self.filetxt  = self.local_dir + '/datasets/ip.txt'
         self.filerec  = self.local_dir + '/datasets/domains.txt'
         self.filedte  = self.local_dir + '/datasets/date_renew_ip.txt'
         self.fserver  = self.local_dir + '/datasets/servers.txt'
-        # Firewall API
-        self.fwl_dio = config('FWL_DIO', default=False)
-        self.fwl_aws = config('FWL_AWS_GROUP_ID', default=False)
-
-''' Instance Flaskmyip '''
-_flaskmyip = Flaskmyip()
+        # Refazer isso aqui pelo amor
+        self.no_cloudflare = args.no_cloudflare
+        self.rec_log = args.prd if args.prd else False
 
 def create_response(data, status_code=200):
     with app.app_context():
@@ -260,46 +257,34 @@ def check_install():
     return res_check_install
 
 
-@app.route('/firewall/<string:_cloud>')
-def update_rules(_cloud: str = '', **kwargs):
-    _pub_ipv4 = public_ipv4()
-    _reply = False
-
+# _pub_ipv4 = public_ipv4()
+@app.route('/firewall/<string:cloud>')
+def update_rules(cloud: str = ''):
+    pub_ipv4 = public_ipv4()
     try:
-        if _cloud.lower() == 'dio':
-            if config('UPDATE_DIO', default=False, cast=bool):
-                _reply = API_DIO().update_fw(ipv4=_pub_ipv4, fwl=_flaskmyip.fwl_dio)
-            else:
-                print("Atualização para DIO não habilitada.")
-        elif _cloud.lower() == 'aws':
-            if config('UPDATE_AWS', default=False, cast=bool):
-                _reply = API_AWS(ipv4=_pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()
-            else:
-                print("Atualização para AWS não habilitada.")
-        elif _cloud.lower() == 'oci':
-            if config('UPDATE_OCI', default=False, cast=bool):
-                _reply = API_OCI().update_rules(ipv4=_pub_ipv4)
-            else:
-                print("Atualização para OCI não habilitada.")
-        elif _cloud.lower() == 'lin':
-            if config('UPDATE_LIN', default=True, cast=bool):
-                _reply = API_LINODE().replace_rule(ipv4=_pub_ipv4, fwl_name='main_linux')
-            else:
-                print("Atualização para LINODE não habilitada.")
+        cloud_functions = {
+            'dio': lambda: {'result': API_DIO().update_fw(ipv4=pub_ipv4, fwl=_flaskmyip.fwl_dio)},
+            'aws': lambda: {'result': API_AWS(ipv4=pub_ipv4, gid=_flaskmyip.fwl_aws).update_rules()},
+            'oci': lambda: {'result': API_OCI().update_rules(ipv4=pub_ipv4)},
+            'lin': lambda: {'result': API_LIN().replace_rule(ipv4=pub_ipv4, fwl_name='main_linux')}
+        }
+
+        if cloud.lower() in cloud_functions:
+            reply = cloud_functions[cloud.lower()]()
+            logger.info(f'{cloud} ------------------------------ {reply["result"]}')
+            return reply
         else:
             print("Provedor de nuvem inválido ou atualização não habilitada.")
             return {'result': 'Invalid or disabled cloud provider.'}
-
     except Exception as err:
-        print(f'Erro ao atualizar regras, cloud {_cloud}: {err}')
+        print(f'Erro ao atualizar regras para {cloud}: {err}')
         return {'result': f'Erro, {err}'}
-
-    return {'result': _reply if _reply else 'Nenhuma atualização realizada ou erro'}
 
 
 @scheduler.task(id='update_rule', trigger=trigger_vpn_rule, misfire_grace_time=120)
 @app.route('/update_rule', methods=['GET'])
 def run_update_rule():
+    # TODO - Colocar isso aqui de acordo com os args
     url = "https://ip.tarcisio.me/ip_external"
     # url = "http://192.168.29.12:8000/ip_external"
     username = "admin"
@@ -355,49 +340,68 @@ def get_public_ipv4():
         logger.info(f'| IP_REST: {_pub_ipv4} |')
         logger.info(f'| IP_FILE: {_log_ipv4} |')
         if _pub_ipv4 != file_ipv4:
-            file_domains = read_domain()
-
-            # records
-            records = []
-            result = get_result()
-            for domain in result['result']:
-                records.append([domain.get('type'),
-                    domain.get('name'),
-                    domain.get('id'),
-                    domain.get('zone_id')]
-                    )
-
-            update_list = []
-            for fd in file_domains:
-                for rc in records:
-                    if fd == rc[0:2]:
-                        if rc not in update_list:
-                            update_list.append(rc)
-
-            key_cf = {
-                'CF_EMAIL': _flaskmyip.CF_EMAIL,
-                'CF_API_KEY': _flaskmyip.CF_API_KEY,
-                'NEW_IPV4': _pub_ipv4
-            }
-
             res_compose_ok = []
             res_compose_er = []
+            _file_domains_ = read_domain()
 
-            # Cloudflare update domains
-            for compose in update_list:
-                res = TMCloudflare().update_record(compose, **key_cf)
-                if res.get('status') == 500:
-                    res_compose_er.append(res)
-                else:
-                    res_compose_ok.append(res)
+            if not _flaskmyip.no_cloudflare:
+                print('| ------ ATUALIZANDO REGISTROS NA CLOUDFLARE ------ |')
+                records = []
+                result = get_result()
+                for domain in result['result']:
+                    records.append([domain.get('type'),
+                        domain.get('name'),
+                        domain.get('id'),
+                        domain.get('zone_id')]
+                        )
+
+                update_list = []
+                for fd in _file_domains_:
+                    for rc in records:
+                        if fd == rc[0:2]:
+                            if rc not in update_list:
+                                update_list.append(rc)
+
+                key_cf = {
+                    'CF_EMAIL': _flaskmyip.CF_EMAIL,
+                    'CF_API_KEY': _flaskmyip.CF_API_KEY,
+                    'NEW_IPV4': _pub_ipv4
+                }
+
+                # Cloudflare update domains
+                for compose in update_list:
+                    res = TMCloudflare().update_record(compose, **key_cf)
+                    if res.get('status') == 500:
+                        res_compose_er.append(res)
+                    else:
+                        res_compose_ok.append(res)
+
+                print('| ------- FIM DA ATUALIZAÇÃO NA CLOUDFLARE ------- |')
+
+            else:
+                print("Atualizações na Cloudflare foram desabilitadas através do argumento --no-cloudflare.")
 
             # Update firewall
             print('| ------ START UPDATES FIREWALL ------ |')
-            update_fwl_dio = update_rules(_dio=False)
-            update_fwl_aws = update_rules(_aws=False)
-            update_fwl_lin = update_rules(_lin=True)
-            update_fwl_oci = update_rules(_oci=True)
+            cloud_updates = {
+                'UPDATE_DIO': 'dio',
+                'UPDATE_AWS': 'aws',
+                'UPDATE_OCI': 'oci',
+                'UPDATE_LIN': 'lin',
+            }
+
+            update_fwl_results = {cloud: None for cloud in cloud_updates.values()}
+            for config_key, cloud in cloud_updates.items():
+                if config(config_key, default=False, cast=bool):
+                    print(f'Updating rules for {cloud.upper()}')
+                    update_fwl_results[cloud] = update_rules(cloud)
+                    logger.info({f'update_fwl_results {cloud}': update_fwl_results})
             print('| ------- END UPDATES FIREWALL ------- |')
+
+            logger.info({'update_fwl_results - dio': update_fwl_results['dio']})
+            logger.info({'update_fwl_results - aws': update_fwl_results['aws']})
+            logger.info({'update_fwl_results - lin': update_fwl_results['lin']})
+            logger.info({'update_fwl_results - oci': update_fwl_results['oci']})
 
             data_res = {
                 'BOT_ID': _flaskmyip.BOT_ID,
@@ -407,28 +411,27 @@ def get_public_ipv4():
                     'Domains Failure': res_compose_er,
                     'NEW_IP': _pub_ipv4,
                     'OLD_IP': file_ipv4,
-                    'FWL_DIO': update_fwl_dio.get('result', None),
-                    'FWL_AWS': update_fwl_aws.get('result', None),
-                    'FWL_LIN': update_fwl_lin.get('result', None),
-                    'FWL_OCI': update_fwl_oci.get('result', None),
+                    'FWL_DIO': update_fwl_results['dio'].get('result', None) if update_fwl_results['dio'] else None,
+                    'FWL_AWS': update_fwl_results['aws'].get('result', None) if update_fwl_results['aws'] else None,
+                    'FWL_LIN': update_fwl_results['lin'].get('result', None) if update_fwl_results['lin'] else None,
+                    'FWL_OCI': update_fwl_results['oci'].get('result', None) if update_fwl_results['oci'] else None,
                 }
             }
 
-            if any([bool(res_compose_ok), bool(res_compose_er),
-                update_fwl_dio, update_fwl_aws, update_fwl_lin, update_fwl_oci]):
+            if any(value for key, value in update_fwl_results.items() if value) or bool(res_compose_ok) or bool(res_compose_er):
                 write_ip(ip=_pub_ipv4)
                 res = send_check(**data_res)
                 data_res.update(res)
 
             if _flaskmyip.rec_log:
-                with open(_flaskmyip.filelog,'a') as file:
+                with open(_flaskmyip.filelog, 'a') as file:
                     file.write(str(data_res.get('MSG')))
 
             return data_res
 
-    # No changes IPV4 - All Ok
-    response_data = {"message": "No changes detected in IPV4. All OK."}
-    return create_response(response_data)
+        # No changes IPV4 - All Ok
+        response_data = {"message": "No changes detected in IPV4. All OK."}
+        return create_response(response_data)
 
 # Legacy function (ja implementei outra ideia melhor)
 def restart_salt():
@@ -571,11 +574,13 @@ if __name__ == '__main__':
                         help='activate logging')
     parser.add_argument('--dev', action='store_true',
                         help='restart salt')
+    parser.add_argument('--no-cloudflare', action='store_true', help='Disable Cloudflare updates')
 
     ''' Args '''
     args = parser.parse_args()
     run_prd = args.prd
     run_dev = args.dev
+    no_cloudflare = args.no_cloudflare
 
     ''' Set Pretty Regular Flask '''
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
@@ -584,7 +589,7 @@ if __name__ == '__main__':
     agora()
 
     if run_dev:
-        Flaskmyip(args=True)
+        _flaskmyip = Flaskmyip(args=args)
         print(' * Basic Auth: Enabled')
         print(' * User: admin')
         print(' * Se deixar o "use_reloader=True" o scheduler vai duplicar toda chamada')
@@ -594,6 +599,7 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=True)
 
     elif run_prd:
+        _flaskmyip = Flaskmyip()
         ''' Setup Scheduler '''
         app.config.from_object(ConfigScheduler())
         scheduler.init_app(app)

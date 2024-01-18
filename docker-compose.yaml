@@ -78,7 +78,7 @@ services:
       - LOG_LEVEL=0
     networks:
       ce_frontend:
-        ipv4_address: 192.168.255.5
+        ipv4_address: 192.168.255.88
     dns:
       - 192.168.255.4
 

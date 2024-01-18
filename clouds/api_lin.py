@@ -5,7 +5,7 @@ import yaml
 import requests
 
 
-class API_LINODE:
+class API_LIN:
     def __init__(self):
         basedir = os.path.abspath(os.path.dirname(__file__))
         with open('{}/../keys_gpg/linode_key.txt'.format(basedir), 'r') as f:
@@ -83,4 +83,4 @@ class API_LINODE:
 
 
 if __name__ == '__main__':
-    API_LINODE().replace_rule(ipv4='192.168.29.11', fwl_name='teste_api')
+    API_LIN().replace_rule(ipv4='192.168.29.11', fwl_name='teste_api')

@@ -81,8 +81,10 @@ class Flaskmyip:
         self.filedte  = self.local_dir + '/datasets/date_renew_ip.txt'
         self.fserver  = self.local_dir + '/datasets/servers.txt'
         # Refazer isso aqui pelo amor
-        self.no_cloudflare = args.no_cloudflare
         self.rec_log = args.prd if args.prd else False
+        self.no_cloudflare = False
+        if args is not None:
+            self.no_cloudflare = getattr(args, 'no_cloudflare', False)
 
 def create_response(data, status_code=200):
     with app.app_context():
@@ -587,9 +589,8 @@ if __name__ == '__main__':
 
     ''' Time Now '''
     agora()
-
+    _flaskmyip = Flaskmyip(args=args)
     if run_dev:
-        _flaskmyip = Flaskmyip(args=args)
         print(' * Basic Auth: Enabled')
         print(' * User: admin')
         print(' * Se deixar o "use_reloader=True" o scheduler vai duplicar toda chamada')
@@ -599,7 +600,6 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=3002, use_reloader=True)
 
     elif run_prd:
-        _flaskmyip = Flaskmyip()
         ''' Setup Scheduler '''
         app.config.from_object(ConfigScheduler())
         scheduler.init_app(app)

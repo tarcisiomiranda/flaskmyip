@@ -1,23 +1,38 @@
 from datetime import datetime
 import requests
 import argparse
-# import salt.client
-# import salt.netapi
 import base64
 import time
 import yaml
-import sys
+import json
 
 SALT_API_URL = 'https://192.168.29.40:8000'
-'''
-curl -sSk https://192.168.29.40:8000/login \
--H 'Accept: application/x-yaml' \
--d username='salt_python' \
--d password='123.senha' \
--d eauth='pam'
 
-# 633d9314dcd9e982adb2c724a8bce3d43297bf01
-'''
+def generate_salt_token(url, username, password, eauth='pam'):
+    login_url = f"{url}/login"
+    headers = {'Accept': 'application/x-yaml'}
+    data = {
+        'username': username,
+        'password': password,
+        'eauth': eauth
+    }
+
+    try:
+        response = requests.post(login_url, headers=headers, data=data, verify=False)
+        response.raise_for_status()
+
+        token_info = yaml.safe_load(response.text)['return'][0]
+        start_date = datetime.fromtimestamp(token_info['start'])
+        expire_date = datetime.fromtimestamp(token_info['expire'])
+
+        return {
+            'token': token_info['token'],
+            'start_date': start_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'expire_date': expire_date.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except requests.RequestException as e:
+        print(f"Erro ao gerar o token: {e}")
+        return None
 
 def generate_salt_token(url, username, password, eauth='pam'):
     login_url = f"{url}/login"
@@ -44,14 +59,6 @@ def generate_salt_token(url, username, password, eauth='pam'):
     except requests.RequestException as e:
         print(f"Erro ao gerar o token: {e}")
         return f"Erro ao gerar o token: {e}"
-
-# salt_api_url = 'https://192.168.29.40:8000'
-# username = 'salt_python'
-# password = '123.senha'
-
-# token_details = generate_salt_token(salt_api_url, username, password)
-# print(token_details)
-
 
 def get_cert(token=None, cert_path='/etc/nginx/certs/'):
     headers = {
@@ -131,12 +138,25 @@ def test_ping(token=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script para interagir com a API do SaltStack")
     parser.add_argument('--token', required=True, help="Token de autenticação para a API do SaltStack")
+    parser.add_argument('--username', help="Nome de usuário para autenticação na API do SaltStack")
+    parser.add_argument('--password', help="Senha para autenticação na API do SaltStack")
     parser.add_argument('--mode', default='ping', help='App mode: "dev" ou "prd"', required=True)
     parser.add_argument('--path', default='/etc/nginx/certs/', help="Caminho onde o certificado será gravado")
 
     args = parser.parse_args()
     TOKEN = args.token
     _PATH = args.path
+    if args.username and args.password:
+        token_info = generate_salt_token(SALT_API_URL, args.username, args.password)
+        if token_info:
+            TOKEN = token_info['token']
+            print(f"Token gerado: {TOKEN}")
+        else:
+            print("Falha ao gerar o token. Verifique suas credenciais e tente novamente.")
+            exit(1)
+    else:
+        print("Username e password são necessários para gerar um novo token.")
+        exit(1)
 
     if args.mode.lower() == 'cert':
         print('Pegando o certificado ...')
@@ -144,7 +164,6 @@ if __name__ == "__main__":
     else:
         print('Fazendo o test.ping ...')
         test_ping(TOKEN)
-
 
 '''
 python3 update_cert.py --mode cert --token 633d9314dcd9e982adb2c724a8bce3d43297bf01 --path '/srv/nginx/etc/certs/'
